@@ -1,61 +1,61 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-const SESSION_KEY = 'viikkoraha-auth';
-
-function loadFromSession() {
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
-    if (!raw) return {};
-    const data = JSON.parse(raw);
-    return {
-      accessToken: data.accessToken || null,
-      user: data.user || null,
-      isSignedIn: Boolean(data.accessToken),
-    };
-  } catch {
-    return {};
+/**
+ * Robust localStorage wrapper — same pattern as settingsStore.
+ */
+function safeGet(key) {
+  try { return localStorage.getItem(key); } catch (e) {
+    console.error('[viikkoraha] localStorage.getItem failed:', e); return null;
+  }
+}
+function safeSet(key, value) {
+  try { localStorage.setItem(key, value); } catch (e) {
+    console.error('[viikkoraha] localStorage.setItem failed:', e);
+  }
+}
+function safeRemove(key) {
+  try { localStorage.removeItem(key); } catch (e) {
+    console.error('[viikkoraha] localStorage.removeItem failed:', e);
   }
 }
 
-export const useAuthStore = create((set) => ({
-  accessToken: null,
-  user: null,
-  isSignedIn: false,
-  isLoading: true,
+export const useAuthStore = create(
+  persist(
+    (set) => ({
+      accessToken: null,
+      user: null,
+      isSignedIn: false,
+      _hydrated: false,
 
-  ...loadFromSession(),
+      setToken: (token) => set({ accessToken: token, isSignedIn: Boolean(token) }),
 
-  setToken: (token) => {
-    set({ accessToken: token, isSignedIn: Boolean(token) });
-    if (token) {
-      const current = loadFromSession();
-      sessionStorage.setItem(
-        SESSION_KEY,
-        JSON.stringify({ accessToken: token, user: current.user }),
-      );
-    }
-  },
+      setUser: (user) => set({ user }),
 
-  setUser: (user) => {
-    set({ user });
-    try {
-      const raw = sessionStorage.getItem(SESSION_KEY);
-      const existing = raw ? JSON.parse(raw) : {};
-      sessionStorage.setItem(
-        SESSION_KEY,
-        JSON.stringify({ ...existing, user }),
-      );
-    } catch {
-      // ignore
-    }
-  },
+      setSignedIn: (val) => set({ isSignedIn: val }),
 
-  setSignedIn: (val) => set({ isSignedIn: val }),
+      signOut: () => {
+        set({ accessToken: null, user: null, isSignedIn: false });
+      },
 
-  signOut: () => {
-    sessionStorage.removeItem(SESSION_KEY);
-    set({ accessToken: null, user: null, isSignedIn: false });
-  },
-
-  setLoading: (val) => set({ isLoading: val }),
-}));
+      setHydrated: () => set({ _hydrated: true }),
+    }),
+    {
+      name: 'viikkoraha-auth',
+      storage: { getItem: safeGet, setItem: safeSet, removeItem: safeRemove },
+      // Don't persist _hydrated — it's runtime-only
+      partialize: (state) => ({
+        accessToken: state.accessToken,
+        user: state.user,
+        isSignedIn: state.isSignedIn,
+      }),
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('[viikkoraha] Auth rehydration failed:', error);
+        }
+        // Always mark as hydrated
+        state?.setHydrated();
+      },
+    },
+  ),
+);

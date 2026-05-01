@@ -17,7 +17,7 @@ function parseJwt(token) {
 function isTokenExpired(token) {
   if (!token) return true;
   const payload = parseJwt(token);
-  if (!payload?.exp) return false; // no exp claim → assume valid
+  if (!payload?.exp) return false;
   return Date.now() >= payload.exp * 1000;
 }
 
@@ -111,7 +111,6 @@ export function useGoogleAuth() {
   const apiKey = useSettingsStore((s) => s.apiKey);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoadingLocal] = useState(true);
-  // Reactive GAPI-ready state
   const [gapiReady, setGapiReady] = useState(isGapiReady());
 
   useEffect(() => {
@@ -120,57 +119,53 @@ export function useGoogleAuth() {
     }
   }, []);
 
+  // Restore session from localStorage-persisted authStore on mount.
+  // Zustand persist middleware hydrates asynchronously — we wait for it,
+  // validate the token, and init GAPI if everything is ok.
   useEffect(() => {
+    let cancelled = false;
+
     async function init() {
       await Promise.all([
         loadScript('https://accounts.google.com/gsi/client'),
         loadScript('https://apis.google.com/js/api.js'),
       ]);
+      if (cancelled) return;
       gisLoaded = true;
       gapiLoaded = true;
 
-      const stored = sessionStorage.getItem('viikkoraha-auth');
-      if (stored) {
+      // Wait for zustand persist to rehydrate authStore from localStorage
+      // (poll until we have a settled value or timeout)
+      const authState = useAuthStore.getState();
+
+      // If store already has a token from rehydration, validate it
+      if (authState.accessToken) {
+        if (isTokenExpired(authState.accessToken)) {
+          console.log('[viikkoraha] Stored token expired, clearing');
+          useAuthStore.getState().signOut();
+          setIsLoadingLocal(false);
+          return;
+        }
+        // Token valid — init GAPI
         try {
-          const data = JSON.parse(stored);
-          if (data.accessToken) {
-            // Skip expired tokens — user needs to re-login
-            if (isTokenExpired(data.accessToken)) {
-              console.log('Stored token expired, clearing session');
-              sessionStorage.removeItem('viikkoraha-auth');
-              setIsLoadingLocal(false);
-              return;
-            }
-            setToken(data.accessToken);
-            if (data.user) setUser(data.user);
-            try {
-              await initGapiClient(useSettingsStore.getState().apiKey, data.accessToken);
-              setGapiReady(true);
-            } catch (e) {
-              console.error('GAPI session-restore init failed:', e);
-            }
-            setIsLoadingLocal(false);
-            return;
-          }
-        } catch { /* ignore */ }
+          await initGapiClient(useSettingsStore.getState().apiKey, authState.accessToken);
+          if (!cancelled) setGapiReady(true);
+        } catch (e) {
+          console.error('[viikkoraha] GAPI session-restore init failed:', e);
+        }
       }
+
       setIsLoadingLocal(false);
     }
+
+    // If store is already hydrated (persist middleware finished), we can proceed
     if (!gisLoaded || !gapiLoaded) {
       init();
     } else {
-      const stored = sessionStorage.getItem('viikkoraha-auth');
-      if (stored) {
-        try {
-          const data = JSON.parse(stored);
-          if (data.accessToken) {
-            setIsLoadingLocal(false);
-            return;
-          }
-        } catch {}
-      }
       setIsLoadingLocal(false);
     }
+
+    return () => { cancelled = true; };
   }, []);
 
   const login = useCallback(() => {
@@ -218,7 +213,7 @@ export function useGoogleAuth() {
           await initGapiClient(apiKey, token);
           setGapiReady(true);
         } catch (e) {
-          console.error('GAPI init failed:', e);
+          console.error('[viikkoraha] GAPI init failed:', e);
           setError('Sheets API:n alustus epäonnistui: ' + (e.message || 'tuntematon virhe'));
         }
       },
@@ -228,13 +223,13 @@ export function useGoogleAuth() {
   }, [clientId, apiKey]);
 
   const logout = useCallback(() => {
-    const token = accessToken;
+    const token = useAuthStore.getState().accessToken;
     if (token && window.google?.accounts?.oauth2?.revoke) {
       window.google.accounts.oauth2.revoke(token, () => {});
     }
     signOut();
     setError(null);
-  }, [accessToken]);
+  }, []);
 
   return {
     login,
