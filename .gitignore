@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Hermes plans / temp
+.hermes/
+
+# IDE
+.vscode/
+.idea/
+
+# Dependencies
+node_modules/
+bower_components/
+
+# Build
+dist/
+build/
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# Embedded repos
+viikkoraha-2/

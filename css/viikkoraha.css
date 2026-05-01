@@ -1,0 +1,85 @@
+.panels {
+  font-weight: bold;
+  color: black;
+  text-align: center;
+}
+
+.chorebuttons {
+  text-transform: capitalize;
+}
+
+.chorebuttons img {
+  max-width: 15vw;
+  max-height: 10vh;
+}
+
+#confirmationtext {
+  text-transform: capitalize;
+}
+
+#confirm {
+  background-color: lightgreen;
+}
+
+#cancel {
+  background-color: salmon;
+}
+
+.ok {
+  background-color: lightgreen;
+}
+
+.error {
+  background-color: salmon;
+}
+
+#confirmationwindow {
+  text-transform: capitalize;
+}
+
+#dashboardpanel {
+}
+
+#notification {
+  text-align: center;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  z-index: 2;
+}
+
+#summarytext {
+  margin-top: 20px;
+  font-weight: bold;
+  color: black;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+div.summaryrows {
+  padding-top: 10px;
+  padding-bottom: 3px;
+  border-top: 1px solid;
+  border-left: 1px solid;
+  border-right: 1px solid;
+  border-color: lightgray;
+  font-weight: normal;
+  font-family: cursive;
+  text-transform: capitalize;
+}
+
+div.summaryrows.paid {
+  background: lightyellow url("../img/png/checkmark.png") right no-repeat;
+  background-size: 15px;
+}
+
+div.summaryrows.pending {
+  background: lightyellow;
+}
+
+#settingspanel {
+  border-radius: 5px;
+  border: 1px solid;
+  border-color: grey;
+  padding: 10px;
+}
