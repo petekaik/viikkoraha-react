@@ -2,6 +2,8 @@
 
 **Lasten viikkorahaseuranta Google Sheetsillä — React 19 PWA, asennettava mobiililaitteille.**
 
+> **Esiasennettu sovellus käytettävissä:** [https://gitpages.morgeweb.com/viikkoraha](https://gitpages.morgeweb.com/viikkoraha)
+
 ## Ominaisuudet
 
 - **Google-kirjautuminen** — OAuth 2.0, jokainen perheenjäsen omalla tunnuksella
