@@ -1,17 +1,35 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-const safeStorage = {
-  getItem: (name) => {
-    try { return localStorage.getItem(name); } catch { return null; }
-  },
-  setItem: (name, value) => {
-    try { localStorage.setItem(name, value); } catch { /* noop */ }
-  },
-  removeItem: (name) => {
-    try { localStorage.removeItem(name); } catch { /* noop */ }
-  },
-};
+/**
+ * Robust localStorage wrapper that never throws and logs failures
+ * so we can catch PWA storage issues in production.
+ */
+function safeGet(key) {
+  try {
+    const val = localStorage.getItem(key);
+    return val;
+  } catch (e) {
+    console.error('[viikkoraha] localStorage.getItem failed:', e);
+    return null;
+  }
+}
+
+function safeSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    console.error('[viikkoraha] localStorage.setItem failed:', e);
+  }
+}
+
+function safeRemove(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch (e) {
+    console.error('[viikkoraha] localStorage.removeItem failed:', e);
+  }
+}
 
 export const useSettingsStore = create(
   persist(
@@ -21,9 +39,7 @@ export const useSettingsStore = create(
       spreadsheetId: '',
 
       setClientId: (id) => set({ clientId: id }),
-
       setApiKey: (key) => set({ apiKey: key }),
-
       setSpreadsheetId: (id) => set({ spreadsheetId: id }),
 
       setAllFromObject: (obj) =>
@@ -35,6 +51,7 @@ export const useSettingsStore = create(
 
       clear: () => {
         set({ clientId: '', apiKey: '', spreadsheetId: '' });
+        safeRemove('viikkoraha-settings');
       },
 
       get isReady() {
@@ -44,7 +61,17 @@ export const useSettingsStore = create(
     }),
     {
       name: 'viikkoraha-settings',
-      storage: safeStorage,
+      storage: {
+        getItem: safeGet,
+        setItem: safeSet,
+        removeItem: safeRemove,
+      },
+      // On rehydration failure, keep defaults but log it
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('[viikkoraha] Settings rehydration failed:', error);
+        }
+      },
     },
   ),
 );

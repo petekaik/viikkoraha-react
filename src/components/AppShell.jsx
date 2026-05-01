@@ -9,7 +9,7 @@ export default function AppShell({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [showSettings, setShowSettings] = useState(false);
-  const isHome = location.pathname === '/';
+  const isHome = location.hash === '#/' || (!location.hash && location.pathname !== '/dashboard');
 
   return (
     <div className="min-h-screen max-w-lg mx-auto relative">
