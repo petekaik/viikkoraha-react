@@ -6,14 +6,16 @@ import { validateSpreadsheetId, validateClientId, validateApiKey } from '../util
 import NotificationBar from './NotificationBar';
 
 export default function SettingsPanel() {
-  const { clientId, apiKey, spreadsheetId, setClientId, setApiKey, setSpreadsheetId } =
+  const { clientId, apiKey, spreadsheetId, setClientId, setApiKey, setSpreadsheetId, clear } =
     useSettingsStore();
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
+  const signOut = useAuthStore((s) => s.signOut);
   const { initSheets, createNewSpreadsheet, isLoading: sheetsLoading } = useGoogleSheets();
 
   const [form, setForm] = useState({ clientId: '', apiKey: '', spreadsheetId: '' });
   const [errors, setErrors] = useState({});
   const [notification, setNotification] = useState(null);
+  const [resetConfirm, setResetConfirm] = useState(false);
 
   useEffect(() => {
     setForm({ clientId, apiKey, spreadsheetId });
@@ -44,6 +46,20 @@ export default function SettingsPanel() {
     const id = idMatch ? idMatch[1] : form.spreadsheetId.trim();
     setSpreadsheetId(id);
     setNotification({ type: 'success', message: 'Asetukset tallennettu' });
+  }
+
+  function handleResetAll() {
+    if (!resetConfirm) {
+      setResetConfirm(true);
+      return;
+    }
+    // Clear all settings, sign out, and reset form
+    clear();
+    signOut();
+    setForm({ clientId: '', apiKey: '', spreadsheetId: '' });
+    setErrors({});
+    setResetConfirm(false);
+    setNotification({ type: 'success', message: 'Kaikki tiedot nollattu' });
   }
 
   async function handleCreateNew() {
@@ -155,6 +171,17 @@ export default function SettingsPanel() {
         className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl transition-colors"
       >
         Tallenna
+      </button>
+
+      <button
+        onClick={handleResetAll}
+        className={`w-full font-semibold py-3 rounded-xl transition-colors ${
+          resetConfirm
+            ? 'bg-red-600 hover:bg-red-500 text-white'
+            : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+        }`}
+      >
+        {resetConfirm ? 'Vahvista nollaus' : 'Nollaa kaikki tiedot'}
       </button>
     </div>
   );

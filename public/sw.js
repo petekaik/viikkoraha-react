@@ -1,11 +1,11 @@
 // Viikkoraha PWA Service Worker
 // Cache strategy: Stale-While-Revalidate for app shell, Network First for API
 
-const APP_VERSION = 'viikkoraha-v1';
+const APP_VERSION = 'viikkoraha-v2';
 const STATIC_CACHE = `${APP_VERSION}-static`;
 const API_CACHE = `${APP_VERSION}-api`;
 
-const STATIC_ASSETS = ['/', '/index.html', '/site.webmanifest'];
+const STATIC_ASSETS = ['/viikkoraha/', '/viikkoraha/index.html', '/viikkoraha/site.webmanifest'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -44,8 +44,8 @@ self.addEventListener('fetch', (event) => {
   // Static assets: Stale-while-revalidate
   if (
     url.pathname.match(/\.(js|css|png|svg|ico|json|woff2|webmanifest)$/) ||
-    url.pathname === '/' ||
-    url.pathname.endsWith('/')
+    url.pathname === '/viikkoraha/' ||
+    url.pathname === '/viikkoraha'
   ) {
     event.respondWith(staleWhileRevalidate(event.request, STATIC_CACHE));
     return;

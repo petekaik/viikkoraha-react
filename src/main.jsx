@@ -8,7 +8,7 @@ import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename="/viikkoraha">
       <AppShell>
         <Routes>
           <Route path="/" element={<HomeView />} />
