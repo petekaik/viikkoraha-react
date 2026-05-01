@@ -56,7 +56,10 @@ export default function AppShell({ children }) {
 
       {/* Settings overlay */}
       {showSettings && (
-        <div className="fixed inset-0 z-50 bg-gray-900 overflow-y-auto" style={{ paddingTop: '3.5rem' }}>
+        <div
+          className="fixed inset-0 z-50 bg-gray-900 overflow-y-auto"
+          style={{ paddingTop: 'calc(3.5rem + env(safe-area-inset-top, 0px))' }}
+        >
           <div className="max-w-lg mx-auto p-4">
             <SettingsPanel />
             <button
@@ -70,7 +73,7 @@ export default function AppShell({ children }) {
       )}
 
       {/* Main content */}
-      <main className="pb-8" style={{ paddingBottom: 'env(safe-area-inset-bottom, 2rem)' }}>
+      <main className="pb-8">
         {children}
       </main>
     </div>
