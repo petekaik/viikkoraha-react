@@ -1,191 +1,33 @@
-<!DOCTYPE html>
-<!--
-To change this license header, choose License Headers in Project Properties.
-To change this template file, choose Tools | Templates
-and open the template in the editor.
--->
-<html>
+<!doctype html>
+<html lang="fi">
   <head>
-    <title>Viikkoraha</title>
-    <meta name="author" content="Petteri Kaikkonen" />
-    <meta name="ROBOTS" content="NOINDEX, NOFOLLOW" />
-
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-
-    <link
-      rel="apple-touch-icon"
-      sizes="180x180"
-      href="img/favicon/apple-touch-icon.png"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="32x32"
-      href="img/favicon/favicon-32x32.png"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="16x16"
-      href="img/favicon/favicon-16x16.png"
-    />
-    <link rel="manifest" href="img/favicon/site.webmanifest" />
-    <link
-      rel="mask-icon"
-      href="img/favicon/safari-pinned-tab.svg"
-      color="#535353"
-    />
-    <link rel="shortcut icon" href="img/favicon/favicon.ico" />
-    <meta name="apple-mobile-web-app-title" content="Viikkoraha" />
-    <meta name="application-name" content="Viikkoraha" />
-    <meta name="msapplication-TileColor" content="#00aba9" />
-    <meta name="msapplication-config" content="img/favicon/browserconfig.xml" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#535353" />
+    <meta name="description" content="Lasten viikkorahaseuranta Google Sheetsillä" />
+    <meta name="author" content="Petteri Kaikkonen" />
 
-    <link
-      rel="apple-touch-startup-image"
-      href="img/splash/iPhone_750x1334@2x.png"
-      media="(min-device-width: 375px) and (max-device-width: 667px) and (orientation: portrait)"
-    />
-    <link
-      rel="apple-touch-startup-image"
-      href="img/splash/iPhone_1334x750@2x.png"
-      media="(min-device-width: 375px) and (max-device-width: 667px) and (orientation: landscape)"
-    />
+    <!-- PWA: Apple -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Viikkoraha" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
-    <link
-      rel="apple-touch-startup-image"
-      href="img/splash/iPadAir_1536x2048@2x.png"
-      media="(min-device-width: 768px) and (max-device-width: 1024px) and (orientation: portrait)"
-    />
-    <link
-      rel="apple-touch-startup-image"
-      href="img/splash/iPadAir_2048x1536@2x.png"
-      media="(min-device-width: 768px) and (max-device-width: 1024px) and (orientation: landscape)"
-    />
+    <!-- PWA: Android + general -->
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#535353" />
+    <link rel="shortcut icon" href="/favicon.ico" />
 
-    <!-- Include the jQuery UI stylesheet -->
-    <link
-      href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css"
-      rel="stylesheet"
-    />
+    <!-- MS tiles -->
+    <meta name="msapplication-TileColor" content="#00aba9" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
 
-    <!-- Include the jQuery Mobile stylesheet-->
-    <link
-      rel="stylesheet"
-      href="https://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.5/jquery.mobile.min.css"
-    />
-
-    <!-- Include the Chartist stylesheet -->
-    <!-- <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.css"
-    /> -->
-
-    <!-- Include local stylesheet -->
-    <link rel="stylesheet" href="css/viikkoraha.css" />
+    <title>Viikkoraha</title>
   </head>
   <body>
-    <div data-role="page" id="page">
-      <div data-role="header" id="header">
-        <a
-          href="#"
-          data-icon="gear"
-          data-iconpos="notext"
-          id="settingsbutton"
-          class="settings"
-        ></a>
-        <h1 id="headertext">Viikkoraha</h1>
-        <a
-          href="#"
-          data-icon="info"
-          data-iconpos="notext"
-          id="dashboardbutton"
-          class="dashboard"
-        ></a>
-      </div>
-
-      <div id="notification" style="display: none;"></div>
-
-      <div data-role="main" id="content" class="ui-content">
-        <!-- Settings -->
-        <div id="settingspanel" class="panels" style="display:none;">
-          <h3>Asetukset</h3>
-          <div id="profile"></div>
-          <button id="authorize-button" style="display: none;">Kirjaudu</button>
-          <button id="signout-button" style="display: none;">
-            Kirjaudu ulos
-          </button>
-          <button id="closesettings" class="settings">Sulje asetukset</button>
-        </div>
-        <!-- Chores -->
-        <div id="chorespanel" class="panels">
-          <div id="confirmation" style="display:none;">
-            <div id="confirmationtext"></div>
-            <button
-              id="confirm"
-              class="confirmationbuttons"
-              data-icon="check"
-              data-iconpos="right"
-            >
-              OK
-            </button>
-            <button
-              id="cancel"
-              class="confirmationbuttons"
-              data-icon="delete"
-              data-iconpos="right"
-            >
-              Peruuta
-            </button>
-          </div>
-          <h3 id="signinnotification" style="display:none;">
-            Kirjaudu sisään nähdäksesi viikkorahatehtävät
-          </h3>
-          <img id="loading" src="img/ajax-loader.gif" style="display:none;" />
-          <div id="chores" style="display:none;"></div>
-        </div>
-        <!-- Dashboard -->
-        <div id="dashboardpanel" class="panels" style="display:none;">
-          <div id="summarytext"></div>
-          <!--
-					<div class="ct-chart ct-golden-section" id="weeklygraph">Viikkoyhteenveto</div>
-					<div class="ct-chart ct-golden-section" id="fullhistorygraph"></div>
-					-->
-          <div id="choreshistorylist"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Include the jQuery library -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-
-    <!-- Include the jQuery UI library -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
-
-    <!-- Include the jQuery Mobile library -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.5/jquery.mobile.min.js"></script>
-
-    <!-- Include the Chartist library -->
-    <!-- <script src="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script> -->
-
-    <!-- Include the Google authentication platform library -->
-    <!-- tuo api kirjasto taitaa hoitaa tämän lataamisen -->
-    <!--<script src="https://apis.google.com/js/platform.js" async defer></script>-->
-
-    <!-- Include the Google API library -->
-    <script
-      async
-      defer
-      src="https://apis.google.com/js/api.js"
-      onload="this.onload=function(){};handleClientLoad()"
-      onreadystatechange="if (this.readyState === 'complete') this.onload()"
-    ></script>
-
-    <!-- Include local libraries -->
-    <script src="js/configuration.js"></script>
-    <script src="js/viikkoraha.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

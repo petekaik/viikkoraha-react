@@ -12,16 +12,15 @@
 
 # Dependencies
 node_modules/
-bower_components/
 
 # Build
 dist/
-build/
 
-# Env files
+# Env
 .env
 .env.local
 .env.*.local
 
-# Embedded repos
-viikkoraha-2/
+# Logs
+*.log
+npm-debug.log*
