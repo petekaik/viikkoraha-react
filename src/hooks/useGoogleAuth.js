@@ -1,6 +1,11 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useSettingsStore } from '../stores/settingsStore';
+import {
+  ensureSettingsSheet,
+  loadSettingsFromSheet,
+  saveSettingsToSheet,
+} from '../utils/settingsSync';
 
 let gisLoaded = false;
 let gapiLoaded = false;
@@ -109,6 +114,7 @@ export function useGoogleAuth() {
   } = useAuthStore();
   const clientId = useSettingsStore((s) => s.clientId);
   const apiKey = useSettingsStore((s) => s.apiKey);
+  const spreadsheetId = useSettingsStore((s) => s.spreadsheetId);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoadingLocal] = useState(true);
   const [gapiReady, setGapiReady] = useState(isGapiReady());
@@ -120,8 +126,6 @@ export function useGoogleAuth() {
   }, []);
 
   // Restore session from localStorage-persisted authStore on mount.
-  // Zustand persist middleware hydrates asynchronously — we wait for it,
-  // validate the token, and init GAPI if everything is ok.
   useEffect(() => {
     let cancelled = false;
 
@@ -134,11 +138,8 @@ export function useGoogleAuth() {
       gisLoaded = true;
       gapiLoaded = true;
 
-      // Wait for zustand persist to rehydrate authStore from localStorage
-      // (poll until we have a settled value or timeout)
       const authState = useAuthStore.getState();
 
-      // If store already has a token from rehydration, validate it
       if (authState.accessToken) {
         if (isTokenExpired(authState.accessToken)) {
           console.log('[viikkoraha] Stored token expired, clearing');
@@ -146,10 +147,19 @@ export function useGoogleAuth() {
           setIsLoadingLocal(false);
           return;
         }
-        // Token valid — init GAPI
         try {
+          const sid = useSettingsStore.getState().spreadsheetId;
           await initGapiClient(useSettingsStore.getState().apiKey, authState.accessToken);
           if (!cancelled) setGapiReady(true);
+
+          // Auto-load settings from sheet on restore
+          if (sid) {
+            try {
+              await loadSettingsFromSheet(sid);
+            } catch (e) {
+              console.warn('[viikkoraha] Settings load on restore failed:', e.message);
+            }
+          }
         } catch (e) {
           console.error('[viikkoraha] GAPI session-restore init failed:', e);
         }
@@ -158,7 +168,6 @@ export function useGoogleAuth() {
       setIsLoadingLocal(false);
     }
 
-    // If store is already hydrated (persist middleware finished), we can proceed
     if (!gisLoaded || !gapiLoaded) {
       init();
     } else {
@@ -212,6 +221,17 @@ export function useGoogleAuth() {
         try {
           await initGapiClient(apiKey, token);
           setGapiReady(true);
+
+          // Auto-load settings from sheet after login
+          const sid = useSettingsStore.getState().spreadsheetId;
+          if (sid) {
+            try {
+              await ensureSettingsSheet(sid);
+              await loadSettingsFromSheet(sid);
+            } catch (e) {
+              console.warn('[viikkoraha] Settings load on login failed:', e.message);
+            }
+          }
         } catch (e) {
           console.error('[viikkoraha] GAPI init failed:', e);
           setError('Sheets API:n alustus epäonnistui: ' + (e.message || 'tuntematon virhe'));
@@ -232,13 +252,9 @@ export function useGoogleAuth() {
   }, []);
 
   return {
-    login,
-    logout,
-    isSignedIn,
-    isLoading,
-    gapiReady,
-    error,
-    user,
+    login, logout,
+    isSignedIn, isLoading,
+    gapiReady, error, user,
   };
 }
 

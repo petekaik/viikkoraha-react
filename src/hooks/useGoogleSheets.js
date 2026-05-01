@@ -1,7 +1,9 @@
 import { useCallback, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useSettingsStore } from '../stores/settingsStore';
-import { CHORES_RANGE, BOOKINGS_RANGE, SUMS_RANGE, DEFAULT_CHORES } from '../utils/sheets-schema';
+import {
+  CHORES_RANGE, BOOKINGS_RANGE, SUMS_RANGE, SETTINGS_RANGE, DEFAULT_CHORES
+} from '../utils/sheets-schema';
 import { isGapiReady } from './useGoogleAuth';
 
 export function useGoogleSheets() {
@@ -23,11 +25,9 @@ export function useGoogleSheets() {
     setIsLoading(true);
     setError(null);
     try {
-      // Ensure token is current (GAPI init already handled by useGoogleAuth)
       window.gapi.client.setToken({ access_token: accessToken });
       return await fn();
     } catch (err) {
-      // Detect auth errors (expired token, revoked, etc.)
       const status = err?.status || err?.code;
       if (status === 401 || status === 403) {
         const authMsg = 'Istunto vanhentui. Kirjaudu uudelleen.';
@@ -35,16 +35,11 @@ export function useGoogleSheets() {
         useAuthStore.getState().signOut();
         throw new Error(authMsg);
       }
-
-      // Extract the most useful error message
       let msg = 'Tuntematon virhe';
       if (err?.result?.error?.message) {
         msg = err.result.error.message;
       } else if (err?.body) {
-        try {
-          const parsed = JSON.parse(err.body);
-          msg = parsed?.error?.message || msg;
-        } catch { /* use default */ }
+        try { const p = JSON.parse(err.body); msg = p?.error?.message || msg; } catch {/* ignore */}
       } else if (err?.message) {
         msg = err.message;
       }
@@ -55,6 +50,70 @@ export function useGoogleSheets() {
     }
   }, [accessToken]);
 
+  // ── Settings sheet sync ──
+
+  /** Load settings from Settings!A2:B and merge into settingsStore. */
+  const loadSettings = useCallback(() =>
+    call(async () => {
+      const res = await window.gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId: useSettingsStore.getState().spreadsheetId,
+        range: SETTINGS_RANGE,
+      });
+      const rows = res.result.values || [];
+      const map = {};
+      for (const [key, val] of rows) {
+        if (key) map[key] = val || '';
+      }
+      useSettingsStore.getState().syncFromSheet(map);
+      return map;
+    }),
+  [call]);
+
+  /** Save current settings from store to Settings!A2:B. */
+  const saveSettings = useCallback(() =>
+    call(async () => {
+      const rows = useSettingsStore.getState().toSheetRows();
+      // Ensure at least 6 rows so we don't shrink the range
+      while (rows.length < 6) rows.push(['', '']);
+      await window.gapi.client.sheets.spreadsheets.values.update(
+        {
+          spreadsheetId: useSettingsStore.getState().spreadsheetId,
+          range: 'Settings!A2:B',
+          valueInputOption: 'USER_ENTERED',
+        },
+        { values: rows },
+      );
+    }),
+  [call]);
+
+  /** Ensure Settings sheet exists. Safe to call multiple times. */
+  const ensureSettingsSheet = useCallback(() =>
+    call(async () => {
+      const meta = await window.gapi.client.sheets.spreadsheets.get({
+        spreadsheetId: useSettingsStore.getState().spreadsheetId,
+      });
+      const existing = (meta.result.sheets || []).map(s =>
+        s.properties.title.toLowerCase());
+      if (existing.includes('settings')) return;
+
+      await window.gapi.client.sheets.spreadsheets.batchUpdate(
+        { spreadsheetId: useSettingsStore.getState().spreadsheetId },
+        { requests: [{ addSheet: { properties: { title: 'Settings' } } }] },
+      );
+      // Create header
+      await window.gapi.client.sheets.spreadsheets.values.update(
+        {
+          spreadsheetId: useSettingsStore.getState().spreadsheetId,
+          range: 'Settings!A1:B1',
+          valueInputOption: 'USER_ENTERED',
+        },
+        { values: [['Key', 'Value']] },
+      );
+    }),
+  [call]);
+
+  // ── Existing operations ──
+
   const getChores = useCallback(() =>
     call(async () => {
       const res = await window.gapi.client.sheets.spreadsheets.values.get({
@@ -62,8 +121,7 @@ export function useGoogleSheets() {
       });
       const rows = res.result.values || [];
       return rows.map(([id, description, value, displayName]) => ({
-        id,
-        description: description || id,
+        id, description: description || id,
         value: parseFloat(value) || 0,
         displayName: displayName || id,
       }));
@@ -94,20 +152,13 @@ export function useGoogleSheets() {
       const userName = user?.name || 'Tuntematon';
       await window.gapi.client.sheets.spreadsheets.values.append(
         {
-          spreadsheetId,
-          range: 'Bookings!A2:G',
-          valueInputOption: 'USER_ENTERED',
-          insertDataOption: 'INSERT_ROWS',
+          spreadsheetId, range: 'Bookings!A2:G',
+          valueInputOption: 'USER_ENTERED', insertDataOption: 'INSERT_ROWS',
         },
         {
           values: [[
-            new Date().toISOString(),
-            choreId,
-            description,
-            value,
-            '=WEEKNUM(LEFT(A:A,10), 2)',
-            userName,
-            'pending',
+            new Date().toISOString(), choreId, description, value,
+            '=WEEKNUM(LEFT(A:A,10), 2)', userName, 'pending',
           ]],
         },
       );
@@ -119,13 +170,10 @@ export function useGoogleSheets() {
       const sheetRow = rowIndex + 2;
       await window.gapi.client.sheets.spreadsheets.values.update(
         {
-          spreadsheetId,
-          range: `Bookings!G${sheetRow}:H${sheetRow}`,
+          spreadsheetId, range: `Bookings!G${sheetRow}:H${sheetRow}`,
           valueInputOption: 'USER_ENTERED',
         },
-        {
-          values: [['paid', paidBy]],
-        },
+        { values: [['paid', paidBy]] },
       );
     }),
   [spreadsheetId, call]);
@@ -156,9 +204,7 @@ export function useGoogleSheets() {
           { requests: [{ addSheet: { properties: { title: 'Chores' } } }] },
         );
         const rows = [['ID', 'Description', 'Value', 'DisplayName']];
-        for (const c of DEFAULT_CHORES) {
-          rows.push([c.id, c.description, c.value, c.displayName]);
-        }
+        for (const c of DEFAULT_CHORES) rows.push([c.id, c.description, c.value, c.displayName]);
         await window.gapi.client.sheets.spreadsheets.values.update(
           { spreadsheetId, range: 'Chores!A1:D', valueInputOption: 'USER_ENTERED' },
           { values: rows },
@@ -195,14 +241,20 @@ export function useGoogleSheets() {
         created.push('Sums');
       }
 
+      // Also ensure Settings sheet exists
+      if (!existingSheets.includes('settings')) {
+        await ensureSettingsSheet();
+        created.push('Settings');
+        // Save initial settings to the newly created sheet
+        await saveSettings();
+      }
+
       return { created };
     }),
-  [spreadsheetId, call]);
+  [spreadsheetId, call, ensureSettingsSheet, saveSettings]);
 
-  // Create BRAND NEW spreadsheet from scratch
   const createNewSpreadsheet = useCallback(() =>
     call(async () => {
-      // 1. Create empty spreadsheet
       const createRes = await window.gapi.client.sheets.spreadsheets.create({
         properties: { title: 'Viikkoraha' },
       });
@@ -210,44 +262,40 @@ export function useGoogleSheets() {
       const sheets = createRes.result.sheets || [];
       const existingTitles = sheets.map(s => s.properties.title.toLowerCase());
 
-      // 2. Remove default "Sheet1" 
       const requests = [];
       if (existingTitles.includes('sheet1')) {
         const sheet1Id = sheets.find(s => s.properties.title.toLowerCase() === 'sheet1')?.properties.sheetId;
-        if (sheet1Id != null) {
-          requests.push({ deleteSheet: { sheetId: sheet1Id } });
-        }
+        if (sheet1Id != null) requests.push({ deleteSheet: { sheetId: sheet1Id } });
       }
 
-      // 3. Create Chores sheet
-      requests.push({ addSheet: { properties: { title: 'Chores' } } });
-      requests.push({ addSheet: { properties: { title: 'Bookings' } } });
-      requests.push({ addSheet: { properties: { title: 'Sums' } } });
+      requests.push(
+        { addSheet: { properties: { title: 'Chores' } } },
+        { addSheet: { properties: { title: 'Bookings' } } },
+        { addSheet: { properties: { title: 'Sums' } } },
+        { addSheet: { properties: { title: 'Settings' } } },
+      );
 
       if (requests.length > 0) {
         await window.gapi.client.sheets.spreadsheets.batchUpdate(
-          { spreadsheetId: newId },
-          { requests },
+          { spreadsheetId: newId }, { requests },
         );
       }
 
-      // 4. Populate Chores
+      // Populate Chores
       const choreRows = [['ID', 'Description', 'Value', 'DisplayName']];
-      for (const c of DEFAULT_CHORES) {
-        choreRows.push([c.id, c.description, c.value, c.displayName]);
-      }
+      for (const c of DEFAULT_CHORES) choreRows.push([c.id, c.description, c.value, c.displayName]);
       await window.gapi.client.sheets.spreadsheets.values.update(
         { spreadsheetId: newId, range: 'Chores!A1:D', valueInputOption: 'USER_ENTERED' },
         { values: choreRows },
       );
 
-      // 5. Populate Bookings header
+      // Populate Bookings
       await window.gapi.client.sheets.spreadsheets.values.update(
         { spreadsheetId: newId, range: 'Bookings!A1:G', valueInputOption: 'USER_ENTERED' },
         { values: [['Timestamp', 'ChoreID', 'Description', 'Value', 'WeekNumber', 'UserName', 'Status']] },
       );
 
-      // 6. Populate Sums with formulas
+      // Sums
       await window.gapi.client.sheets.spreadsheets.values.update(
         { spreadsheetId: newId, range: 'Sums!A1:B', valueInputOption: 'USER_ENTERED' },
         {
@@ -258,6 +306,20 @@ export function useGoogleSheets() {
         },
       );
 
+      // Settings header
+      await window.gapi.client.sheets.spreadsheets.values.update(
+        { spreadsheetId: newId, range: 'Settings!A1:B1', valueInputOption: 'USER_ENTERED' },
+        { values: [['Key', 'Value']] },
+      );
+
+      // Save current settings
+      const settingRows = useSettingsStore.getState().toSheetRows();
+      while (settingRows.length < 6) settingRows.push(['', '']);
+      await window.gapi.client.sheets.spreadsheets.values.update(
+        { spreadsheetId: newId, range: 'Settings!A2:B', valueInputOption: 'USER_ENTERED' },
+        { values: settingRows },
+      );
+
       return { spreadsheetId: newId, sheetsUrl: `https://docs.google.com/spreadsheets/d/${newId}` };
     }),
   [call]);
@@ -265,6 +327,7 @@ export function useGoogleSheets() {
   return {
     getChores, getBookings, appendBooking, updateStatus, getSummary, initSheets,
     createNewSpreadsheet, clearError,
+    loadSettings, saveSettings, ensureSettingsSheet,
     isLoading, error,
   };
 }

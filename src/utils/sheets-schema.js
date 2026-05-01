@@ -1,6 +1,8 @@
 export const CHORES_RANGE = 'Chores!A2:D';
 export const BOOKINGS_RANGE = 'Bookings!A2:G';
 export const SUMS_RANGE = 'Sums!A2:B';
+export const SETTINGS_RANGE = 'Settings!A2:B';
+export const DEFAULT_SPREADSHEET_ID = import.meta.env.VITE_DEFAULT_SPREADSHEET_ID || '';
 
 export const CHORE_ICONS = {
   siivous: 'cleaning',

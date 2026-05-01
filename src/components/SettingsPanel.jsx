@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useAuthStore } from '../stores/authStore';
 import { useGoogleSheets } from '../hooks/useGoogleSheets';
+import { saveSettingsToSheet, ensureSettingsSheet } from '../utils/settingsSync';
 import { validateSpreadsheetId, validateClientId, validateApiKey } from '../utils/validation';
 import NotificationBar from './NotificationBar';
 
@@ -16,6 +17,7 @@ export default function SettingsPanel() {
   const [errors, setErrors] = useState({});
   const [notification, setNotification] = useState(null);
   const [resetConfirm, setResetConfirm] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setForm({ clientId, apiKey, spreadsheetId });
@@ -38,14 +40,30 @@ export default function SettingsPanel() {
     return Object.keys(e).length === 0;
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!validate()) return;
     setClientId(form.clientId.trim());
     setApiKey(form.apiKey.trim());
     const idMatch = form.spreadsheetId.match(/\/d\/([a-zA-Z0-9-_]+)/);
     const id = idMatch ? idMatch[1] : form.spreadsheetId.trim();
     setSpreadsheetId(id);
-    setNotification({ type: 'success', message: 'Asetukset tallennettu' });
+
+    // Sync to sheet if logged in and GAPI ready
+    if (isSignedIn && window.gapi?.client?.sheets) {
+      setSaving(true);
+      try {
+        await ensureSettingsSheet(id);
+        await saveSettingsToSheet(id);
+        setNotification({ type: 'success', message: 'Asetukset tallennettu (paikallisesti + sheet)' });
+      } catch (e) {
+        console.error('[viikkoraha] Sheet sync failed:', e);
+        setNotification({ type: 'success', message: 'Asetukset tallennettu (vain paikallisesti)' });
+      } finally {
+        setSaving(false);
+      }
+    } else {
+      setNotification({ type: 'success', message: 'Asetukset tallennettu (paikallisesti)' });
+    }
   }
 
   function handleResetAll() {
@@ -53,7 +71,6 @@ export default function SettingsPanel() {
       setResetConfirm(true);
       return;
     }
-    // Clear all settings, sign out, and reset form
     clear();
     signOut();
     setForm({ clientId: '', apiKey: '', spreadsheetId: '' });
@@ -70,12 +87,11 @@ export default function SettingsPanel() {
     try {
       const result = await createNewSpreadsheet();
       if (result?.spreadsheetId) {
-        // Auto-fill the form and store with the new ID
         setSpreadsheetId(result.spreadsheetId);
         setForm((p) => ({ ...p, spreadsheetId: result.spreadsheetId }));
         setNotification({
           type: 'success',
-          message: `Uusi Viikkoraha luotu! ID täytetty.`,
+          message: 'Uusi Viikkoraha luotu! ID täytetty.',
         });
       } else {
         setNotification({ type: 'error', message: 'Luonti epäonnistui: ei saatu ID:tä' });
@@ -168,9 +184,10 @@ export default function SettingsPanel() {
 
       <button
         onClick={handleSave}
-        className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl transition-colors"
+        disabled={saving}
+        className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
       >
-        Tallenna
+        {saving ? 'Tallennetaan...' : 'Tallenna'}
       </button>
 
       <button

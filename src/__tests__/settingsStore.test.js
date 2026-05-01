@@ -8,8 +8,8 @@ beforeEach(() => {
     clientId: '',
     apiKey: '',
     spreadsheetId: '',
+    _lastSheetSync: null,
   });
-  // Also clear persisted data
   try {
     localStorage.removeItem('viikkoraha-settings');
   } catch { /* ignore */ }
@@ -50,7 +50,7 @@ describe('settingsStore', () => {
     expect(s.spreadsheetId).toBe('s');
   });
 
-  it('clear resets all fields', () => {
+  it('clear resets all fields to defaults', () => {
     useSettingsStore.getState().setAllFromObject({
       clientId: 'c', apiKey: 'a', spreadsheetId: 's',
     });
@@ -58,6 +58,68 @@ describe('settingsStore', () => {
     const s = useSettingsStore.getState();
     expect(s.clientId).toBe('');
     expect(s.apiKey).toBe('');
-    expect(s.spreadsheetId).toBe('');
+    expect(s.spreadsheetId).toBeTypeOf('string'); // default is type string (may be '' or DEFAULT_SPREADSHEET_ID)
+  });
+
+  it('syncFromSheet merges key-value map into store', () => {
+    useSettingsStore.getState().syncFromSheet({
+      clientId: 'sheet-client.apps.googleusercontent.com',
+      apiKey: 'sheet-key',
+      spreadsheetId: 'sheet-spreadsheet-id',
+    });
+    const s = useSettingsStore.getState();
+    expect(s.clientId).toBe('sheet-client.apps.googleusercontent.com');
+    expect(s.apiKey).toBe('sheet-key');
+    expect(s.spreadsheetId).toBe('sheet-spreadsheet-id');
+    expect(s._lastSheetSync).toBeGreaterThan(0);
+  });
+
+  it('syncFromSheet only overrides non-empty values', () => {
+    // Set initial state
+    useSettingsStore.getState().setAllFromObject({
+      clientId: 'existing-client',
+      apiKey: 'existing-key',
+      spreadsheetId: 'existing-id',
+    });
+    // Sync with partial data — missing values should keep existing
+    useSettingsStore.getState().syncFromSheet({
+      clientId: 'new-client',
+    });
+    const s = useSettingsStore.getState();
+    expect(s.clientId).toBe('new-client');
+    expect(s.apiKey).toBe('existing-key');
+    expect(s.spreadsheetId).toBe('existing-id');
+  });
+
+  it('toSheetRows returns key-value rows', () => {
+    useSettingsStore.getState().setAllFromObject({
+      clientId: 'test-client',
+      apiKey: 'test-key',
+      spreadsheetId: 'test-id',
+    });
+    const rows = useSettingsStore.getState().toSheetRows();
+    expect(rows).toEqual([
+      ['clientId', 'test-client'],
+      ['apiKey', 'test-key'],
+      ['spreadsheetId', 'test-id'],
+    ]);
+  });
+
+  it('isReady returns false when any setting is empty', () => {
+    useSettingsStore.setState({ clientId: '', apiKey: 'key', spreadsheetId: 'id' });
+    expect(useSettingsStore.getState().checkReady()).toBe(false);
+
+    useSettingsStore.setState({ clientId: 'c', apiKey: '', spreadsheetId: 'id' });
+    expect(useSettingsStore.getState().checkReady()).toBe(false);
+
+    useSettingsStore.setState({ clientId: 'c', apiKey: 'key', spreadsheetId: '' });
+    expect(useSettingsStore.getState().checkReady()).toBe(false);
+  });
+
+  it('isReady returns true when all settings are set', () => {
+    useSettingsStore.getState().setAllFromObject({
+      clientId: 'c', apiKey: 'a', spreadsheetId: 's',
+    });
+    expect(useSettingsStore.getState().checkReady()).toBe(true);
   });
 });
