@@ -1,17 +1,18 @@
 /**
- * Production deployment smoke tests.
+ * Production + preview deployment smoke tests.
  *
- * Validates that the deployed Viikkoraha app is alive, serves the expected
- * HTML shell, and exposes PWA assets correctly.
+ * Validates that the deployed Viikkoraha app serves index.html,
+ * PWA assets, JS/CSS bundles.
  *
- * Requires: DEPLOY_URL in .env (defaults to https://gitpages.morgeweb.com/viikkoraha)
- *
- * Run:  npm run test:smoke
+ * Requires: DEPLOY_URL in environment
+ *   Dev:  http://localhost:4173/viikkoraha   (npm run test:dev-smoke, preview)
+ *   UAT:  https://gitpages.morgeweb.com/viikkoraha  (npm run test:smoke)
  */
 
 import { describe, it, expect } from 'vitest';
 
-const BASE = process.env.DEPLOY_URL || 'https://gitpages.morgeweb.com/viikkoraha';
+const raw = process.env.DEPLOY_URL || 'https://gitpages.morgeweb.com/viikkoraha';
+const BASE = raw.endsWith('/') ? raw : raw + '/';
 
 describe('Deployment smoke', () => {
   it('serves index.html with correct content-type', async () => {
@@ -35,37 +36,41 @@ describe('Deployment smoke', () => {
   });
 
   it('PWA manifest is reachable', async () => {
-    const res = await fetch(`${BASE}/site.webmanifest`);
+    const res = await fetch(BASE + 'site.webmanifest');
     expect(res.ok, `HTTP ${res.status}`).toBe(true);
-    const json = await res.json();
-    expect(json.name).toBe('Viikkoraha');
   });
 
   it('service worker is reachable', async () => {
-    const res = await fetch(`${BASE}/sw.js`);
+    const res = await fetch(BASE + 'sw.js');
     expect(res.ok, `HTTP ${res.status}`).toBe(true);
     const sw = await res.text();
     expect(sw).toContain('viikkoraha');
   });
 
   it('static JS asset is served', async () => {
-    // Find the hashed JS filename from index.html
-    const res = await fetch(BASE);
-    const html = await res.text();
-    const match = html.match(/\/viikkoraha\/assets\/index-[^"]+\.js/);
-    expect(match).not.toBeNull();
-    const jsUrl = `https://gitpages.morgeweb.com${match[0]}`;
-    const jsRes = await fetch(jsUrl);
-    expect(jsRes.ok, `HTTP ${jsRes.status}`).toBe(true);
+    const htmlRes = await fetch(BASE);
+    const html = await htmlRes.text();
+    const match = html.match(/(?:\/viikkoraha)?\/assets\/index-[^"]+\.js/);
+    expect(match, 'JS asset not found in HTML').not.toBeNull();
+    const jsUrl = match[0].startsWith('http') ? match[0] : BASE.replace(/\/+$/, '') + match[0];
+    const res = await fetch(jsUrl);
+    expect(res.ok, `HTTP ${res.status} for ${jsUrl}`).toBe(true);
   });
 
   it('static CSS asset is served', async () => {
-    const res = await fetch(BASE);
-    const html = await res.text();
-    const match = html.match(/\/viikkoraha\/assets\/index-[^"]+\.css/);
-    expect(match).not.toBeNull();
-    const cssUrl = `https://gitpages.morgeweb.com${match[0]}`;
-    const cssRes = await fetch(cssUrl);
-    expect(cssRes.ok, `HTTP ${cssRes.status}`).toBe(true);
+    const htmlRes = await fetch(BASE);
+    const html = await htmlRes.text();
+    const match = html.match(/(?:\/viikkoraha)?\/assets\/index-[^"]+\.css/);
+    expect(match, 'CSS asset not found in HTML').not.toBeNull();
+    const cssUrl = match[0].startsWith('http') ? match[0] : BASE.replace(/\/+$/, '') + match[0];
+    const res = await fetch(cssUrl);
+    expect(res.ok, `HTTP ${res.status} for ${cssUrl}`).toBe(true);
+  });
+
+  it('PWA manifest has correct values', async () => {
+    const res = await fetch(BASE + 'site.webmanifest');
+    const json = await res.json();
+    expect(json.name).toBe('Viikkoraha');
+    expect(json.display).toBe('standalone');
   });
 });

@@ -10,7 +10,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:dev": "vitest run --config vitest.dev.config.js",
-    "test:smoke": "vitest run --config vitest.smoke.config.js"
+    "test:dev-smoke": "vitest run --config vitest.dev-smoke.config.js",
+    "test:smoke": "vitest run --config vitest.smoke.config.js",
+    "deploy": "bash scripts/deploy.sh"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.4",
