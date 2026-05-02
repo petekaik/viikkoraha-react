@@ -76,7 +76,10 @@ async function initGapiClient(apiKey, token) {
           try {
             await window.gapi.client.init({
               apiKey,
-              discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+              discoveryDocs: [
+                'https://sheets.googleapis.com/$discovery/rest?version=v4',
+                'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
+              ],
             });
             gapiInitialized = true;
             notifyReady();
@@ -190,7 +193,7 @@ export function useGoogleAuth() {
     setError(null);
     const tokenClient = window.google.accounts.oauth2.initTokenClient({
       client_id: clientId,
-      scope: 'https://www.googleapis.com/auth/spreadsheets',
+      scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly',
       callback: async (tokenResponse) => {
         if (tokenResponse.error) {
           setError(tokenResponse.error_description || tokenResponse.error);

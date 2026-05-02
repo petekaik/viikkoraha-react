@@ -114,6 +114,36 @@ export function useGoogleSheets() {
     }),
   [call]);
 
+  /** List user's spreadsheets via Drive API (name + id). */
+  const listSpreadsheets = useCallback(() =>
+    call(async () => {
+      const res = await window.gapi.client.drive.files.list({
+        q: "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
+        orderBy: 'modifiedTime desc',
+        pageSize: 50,
+        fields: 'files(id, name, modifiedTime)',
+      });
+      return (res.result.files || []).map(f => ({
+        id: f.id,
+        name: f.name,
+        modifiedTime: f.modifiedTime,
+      }));
+    }),
+  [call]);
+
+  /** Validate that a spreadsheet has the required Viikkoraha tabs.
+   *  Returns { valid, missing, name }  */
+  const validateSpreadsheet = useCallback((id) =>
+    call(async () => {
+      const meta = await window.gapi.client.sheets.spreadsheets.get({ spreadsheetId: id });
+      const title = meta.result.properties?.title || '';
+      const existing = (meta.result.sheets || []).map(s => s.properties.title.toLowerCase());
+      const required = ['chores', 'bookings', 'sums', 'settings'];
+      const missing = required.filter(r => !existing.includes(r));
+      return { valid: missing.length === 0, missing, name: title };
+    }),
+  [call]);
+
   // ── Existing operations ──
 
   const getChores = useCallback(() =>
@@ -196,20 +226,22 @@ export function useGoogleSheets() {
 
   const initSheets = useCallback(() =>
     call(async () => {
-      const meta = await window.gapi.client.sheets.spreadsheets.get({ spreadsheetId });
+      const sid = useSettingsStore.getState().spreadsheetId;
+      if (!sid) throw new Error('Spreadsheet ID puuttuu');
+      const meta = await window.gapi.client.sheets.spreadsheets.get({ spreadsheetId: sid });
       const existingSheets = (meta.result.sheets || []).map((s) =>
         s.properties.title.toLowerCase());
       const created = [];
 
       if (!existingSheets.includes('chores')) {
         await window.gapi.client.sheets.spreadsheets.batchUpdate(
-          { spreadsheetId },
+          { spreadsheetId: sid },
           { requests: [{ addSheet: { properties: { title: 'Chores' } } }] },
         );
         const rows = [['ID', 'Description', 'Value', 'DisplayName']];
         for (const c of DEFAULT_CHORES) rows.push([c.id, c.description, c.value, c.displayName]);
         await window.gapi.client.sheets.spreadsheets.values.update(
-          { spreadsheetId, range: 'Chores!A1:D', valueInputOption: 'USER_ENTERED' },
+          { spreadsheetId: sid, range: 'Chores!A1:D', valueInputOption: 'USER_ENTERED' },
           { values: rows },
         );
         created.push('Chores');
@@ -217,11 +249,11 @@ export function useGoogleSheets() {
 
       if (!existingSheets.includes('bookings')) {
         await window.gapi.client.sheets.spreadsheets.batchUpdate(
-          { spreadsheetId },
+          { spreadsheetId: sid },
           { requests: [{ addSheet: { properties: { title: 'Bookings' } } }] },
         );
         await window.gapi.client.sheets.spreadsheets.values.update(
-          { spreadsheetId, range: 'Bookings!A1:G', valueInputOption: 'USER_ENTERED' },
+          { spreadsheetId: sid, range: 'Bookings!A1:G', valueInputOption: 'USER_ENTERED' },
           { values: [['Timestamp', 'ChoreID', 'Description', 'Value', 'WeekNumber', 'UserName', 'Status']] },
         );
         created.push('Bookings');
@@ -229,11 +261,11 @@ export function useGoogleSheets() {
 
       if (!existingSheets.includes('sums')) {
         await window.gapi.client.sheets.spreadsheets.batchUpdate(
-          { spreadsheetId },
+          { spreadsheetId: sid },
           { requests: [{ addSheet: { properties: { title: 'Sums' } } }] },
         );
         await window.gapi.client.sheets.spreadsheets.values.update(
-          { spreadsheetId, range: 'Sums!A1:B', valueInputOption: 'USER_ENTERED' },
+          { spreadsheetId: sid, range: 'Sums!A1:B', valueInputOption: 'USER_ENTERED' },
           {
             values: [
               ['Pending', '=SUMIF(Bookings!G2:G; "pending"; Bookings!D2:D)'],
@@ -254,7 +286,7 @@ export function useGoogleSheets() {
 
       return { created };
     }),
-  [spreadsheetId, call, ensureSettingsSheet, saveSettings]);
+  [call, ensureSettingsSheet, saveSettings]);
 
   const createNewSpreadsheet = useCallback(() =>
     call(async () => {
@@ -331,6 +363,7 @@ export function useGoogleSheets() {
     getChores, getBookings, appendBooking, updateStatus, getSummary, initSheets,
     createNewSpreadsheet, clearError,
     loadSettings, saveSettings, ensureSettingsSheet,
+    listSpreadsheets, validateSpreadsheet,
     isLoading, error,
   };
 }
