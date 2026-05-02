@@ -3,25 +3,28 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useAuthStore } from '../stores/authStore';
 import { useGoogleSheets } from '../hooks/useGoogleSheets';
 import { saveSettingsToSheet, ensureSettingsSheet } from '../utils/settingsSync';
-import { validateSpreadsheetId, validateClientId, validateApiKey } from '../utils/validation';
+import { validateClientId, validateApiKey } from '../utils/validation';
 import NotificationBar from './NotificationBar';
+import SpreadsheetPicker from './SpreadsheetPicker';
 
 export default function SettingsPanel() {
   const { clientId, apiKey, spreadsheetId, setClientId, setApiKey, setSpreadsheetId, clear } =
     useSettingsStore();
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
   const signOut = useAuthStore((s) => s.signOut);
-  const { initSheets, createNewSpreadsheet, isLoading: sheetsLoading } = useGoogleSheets();
+  const { initSheets, isLoading: sheetsLoading } = useGoogleSheets();
 
-  const [form, setForm] = useState({ clientId: '', apiKey: '', spreadsheetId: '' });
+  const [form, setForm] = useState({ clientId: '', apiKey: '' });
   const [errors, setErrors] = useState({});
   const [notification, setNotification] = useState(null);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Track selected spreadsheet name for display
+  const [spreadsheetName, setSpreadsheetName] = useState('');
 
   useEffect(() => {
-    setForm({ clientId, apiKey, spreadsheetId });
-  }, [clientId, apiKey, spreadsheetId]);
+    setForm({ clientId, apiKey });
+  }, [clientId, apiKey]);
 
   function handleChange(field, value) {
     setForm((p) => ({ ...p, [field]: value }));
@@ -32,10 +35,8 @@ export default function SettingsPanel() {
     const e = {};
     const c = validateClientId(form.clientId);
     const a = validateApiKey(form.apiKey);
-    const s = validateSpreadsheetId(form.spreadsheetId);
     if (!c.valid) e.clientId = c.error;
     if (!a.valid) e.apiKey = a.error;
-    if (!s.valid) e.spreadsheetId = s.error;
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -44,26 +45,30 @@ export default function SettingsPanel() {
     if (!validate()) return;
     setClientId(form.clientId.trim());
     setApiKey(form.apiKey.trim());
-    const idMatch = form.spreadsheetId.match(/\/d\/([a-zA-Z0-9-_]+)/);
-    const id = idMatch ? idMatch[1] : form.spreadsheetId.trim();
-    setSpreadsheetId(id);
 
-    // Sync to sheet if logged in and GAPI ready
-    if (isSignedIn && window.gapi?.client?.sheets) {
-      setSaving(true);
-      try {
-        await ensureSettingsSheet(id);
-        await saveSettingsToSheet(id);
-        setNotification({ type: 'success', message: 'Asetukset tallennettu (paikallisesti + sheet)' });
-      } catch (e) {
-        console.error('[viikkoraha] Sheet sync failed:', e);
-        setNotification({ type: 'success', message: 'Asetukset tallennettu (vain paikallisesti)' });
-      } finally {
-        setSaving(false);
+    setSaving(true);
+    try {
+      // Sync to sheet if logged in and GAPI ready
+      if (isSignedIn && window.gapi?.client?.sheets && spreadsheetId) {
+        try {
+          await ensureSettingsSheet(spreadsheetId);
+          await saveSettingsToSheet(spreadsheetId);
+          setNotification({ type: 'success', message: 'Asetukset tallennettu (paikallisesti + sheet)' });
+        } catch (e) {
+          console.error('[viikkoraha] Sheet sync failed:', e);
+          setNotification({ type: 'success', message: 'Asetukset tallennettu (vain paikallisesti)' });
+        }
+      } else {
+        setNotification({ type: 'success', message: 'Asetukset tallennettu (paikallisesti)' });
       }
-    } else {
-      setNotification({ type: 'success', message: 'Asetukset tallennettu (paikallisesti)' });
+    } finally {
+      setSaving(false);
     }
+  }
+
+  function handleSpreadsheetChange(id, name) {
+    setSpreadsheetId(id);
+    setSpreadsheetName(name || id);
   }
 
   function handleResetAll() {
@@ -73,8 +78,9 @@ export default function SettingsPanel() {
     }
     clear();
     signOut();
-    setForm({ clientId: '', apiKey: '', spreadsheetId: '' });
+    setForm({ clientId: '', apiKey: '' });
     setErrors({});
+    setSpreadsheetName('');
     setResetConfirm(false);
     setNotification({ type: 'success', message: 'Kaikki tiedot nollattu' });
   }
@@ -85,19 +91,10 @@ export default function SettingsPanel() {
       return;
     }
     try {
-      const result = await createNewSpreadsheet();
-      if (result?.spreadsheetId) {
-        setSpreadsheetId(result.spreadsheetId);
-        setForm((p) => ({ ...p, spreadsheetId: result.spreadsheetId }));
-        setNotification({
-          type: 'success',
-          message: 'Uusi Viikkoraha luotu! ID täytetty.',
-        });
-      } else {
-        setNotification({ type: 'error', message: 'Luonti epäonnistui: ei saatu ID:tä' });
-      }
+      await initSheets();
+      setNotification({ type: 'success', message: 'Taulukko alustettu' });
     } catch (err) {
-      const msg = err?.message || err?.result?.error?.message || 'Luonti epäonnistui';
+      const msg = err?.message || err?.result?.error?.message || 'Alustus epäonnistui';
       setNotification({ type: 'error', message: msg });
     }
   }
@@ -152,35 +149,12 @@ export default function SettingsPanel() {
         )}
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">
-          Spreadsheet ID tai URL
-        </label>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={form.spreadsheetId}
-            onChange={(e) => handleChange('spreadsheetId', e.target.value)}
-            placeholder="docs.google.com/spreadsheets/d/..."
-            className={`flex-1 bg-gray-700 border rounded-lg px-3 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.spreadsheetId ? 'border-red-500' : 'border-gray-600'
-            }`}
-          />
-          <button
-            onClick={handleCreateNew}
-            disabled={sheetsLoading || !isSignedIn}
-            className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-white text-sm font-medium transition-colors shrink-0"
-          >
-            {sheetsLoading ? 'Luodaan...' : 'Luo uusi'}
-          </button>
-        </div>
-        <p className="text-xs text-gray-500 mt-1">
-          Olemassa olevan spreadsheetin URL, tai luo uusi tästä
-        </p>
-        {errors.spreadsheetId && (
-          <p className="text-xs text-red-400 mt-1">{errors.spreadsheetId}</p>
-        )}
-      </div>
+      {/* ── Spreadsheet picker replaces old text field ── */}
+      <SpreadsheetPicker
+        value={spreadsheetId}
+        onChange={handleSpreadsheetChange}
+        isSignedIn={isSignedIn}
+      />
 
       <button
         onClick={handleSave}
