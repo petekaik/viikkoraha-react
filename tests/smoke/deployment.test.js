@@ -52,7 +52,7 @@ describe('Deployment smoke', () => {
     const html = await htmlRes.text();
     const match = html.match(/(?:\/viikkoraha)?\/assets\/index-[^"]+\.js/);
     expect(match, 'JS asset not found in HTML').not.toBeNull();
-    const jsUrl = match[0].startsWith('http') ? match[0] : BASE.replace(/\/+$/, '') + match[0];
+    const jsUrl = new URL(match[0], BASE).toString();
     const res = await fetch(jsUrl);
     expect(res.ok, `HTTP ${res.status} for ${jsUrl}`).toBe(true);
   });
@@ -62,7 +62,7 @@ describe('Deployment smoke', () => {
     const html = await htmlRes.text();
     const match = html.match(/(?:\/viikkoraha)?\/assets\/index-[^"]+\.css/);
     expect(match, 'CSS asset not found in HTML').not.toBeNull();
-    const cssUrl = match[0].startsWith('http') ? match[0] : BASE.replace(/\/+$/, '') + match[0];
+    const cssUrl = new URL(match[0], BASE).toString();
     const res = await fetch(cssUrl);
     expect(res.ok, `HTTP ${res.status} for ${cssUrl}`).toBe(true);
   });
