@@ -1,7 +1,7 @@
 // Viikkoraha PWA Service Worker
 // Cache strategy: Stale-While-Revalidate for app shell, Network First for API
 
-const APP_VERSION = 'viikkoraha-v3';
+const APP_VERSION = 'viikkoraha-v4';
 const STATIC_CACHE = `${APP_VERSION}-static`;
 const API_CACHE = `${APP_VERSION}-api`;
 
