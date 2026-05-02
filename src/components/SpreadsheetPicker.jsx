@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useGoogleSheets } from '../hooks/useGoogleSheets';
-import { validateSpreadsheetId } from '../utils/validation';
+import { useGoogleAuth } from '../hooks/useGoogleAuth';
 
 /**
  * Dropdown picker for selecting a Google Sheet.
@@ -15,6 +15,7 @@ import { validateSpreadsheetId } from '../utils/validation';
 export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
   const { listSpreadsheets, createNewSpreadsheet, validateSpreadsheet, initSheets } =
     useGoogleSheets();
+  const { gapiReady } = useGoogleAuth();
 
   const [sheets, setSheets] = useState([]);          // [{id, name, modifiedTime}]
   const [loading, setLoading] = useState(false);
@@ -23,22 +24,25 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
   const [validating, setValidating] = useState(false);
   const [selected, setSelected] = useState('');       // current id selected in dropdown
   const [validation, setValidation] = useState(null);  // { valid, missing, name }
+  const [loadedOnce, setLoadedOnce] = useState(false);
 
-  // ── Load spreadsheets when signed in ──
+  // ── Load spreadsheets when signed in AND GAPI is ready ──
   const load = useCallback(async () => {
-    if (!isSignedIn || !window.gapi?.client?.drive) return;
+    if (!isSignedIn || !gapiReady || !window.gapi?.client?.drive) return;
     setLoading(true);
     setError(null);
     try {
       const files = await listSpreadsheets();
       setSheets(files);
+      setLoadedOnce(true);
     } catch (e) {
       setError(e?.result?.error?.message || e.message || 'Spreadsheet-listaus epäonnistui');
     } finally {
       setLoading(false);
     }
-  }, [isSignedIn, listSpreadsheets]);
+  }, [isSignedIn, gapiReady, listSpreadsheets]);
 
+  // Refresh when auth state or GAPI readiness changes
   useEffect(() => { load(); }, [load]);
 
   // Sync selected from external value
@@ -67,15 +71,11 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
     setSelected(id);
     if (!id) return;
 
-    // Check if already in list
     const match = sheets.find(s => s.id === id);
     if (match) {
       runValidation(id);
     } else {
-      // User typed/pasted an ID manually — validate too
-      const parsed = validateSpreadsheetId(id);
-      if (parsed.valid) runValidation(id);
-      else setValidation({ valid: false, missing: [], name: '?', error: parsed.error });
+      setValidation({ valid: false, missing: [], name: '?', error: 'Tunniste ei vastaa mitään tunnettua taulukkoa' });
     }
   }
 
@@ -114,6 +114,8 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
 
   // ── Render ──
   const needsFix = validation && !validation.valid && validation.missing?.length > 0;
+  const noSheetsYet = loadedOnce && sheets.length === 0;
+  const isBusy = !isSignedIn || !gapiReady || loading;
 
   return (
     <div className="space-y-2">
@@ -121,45 +123,51 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
         Laskentataulukko
       </label>
 
-      <div className="flex gap-2">
-        <select
-          value={selected}
-          onChange={handleSelect}
-          disabled={!isSignedIn || loading}
-          className={`flex-1 bg-gray-700 border rounded-lg px-3 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 ${
-            validation?.valid ? 'border-emerald-600' :
-            validation?.error || error ? 'border-red-500' : 'border-gray-600'
-          }`}
-        >
-          <option value="">
-            {loading ? 'Ladataan...' : isSignedIn ? '-- Valitse laskentataulukko --' : 'Kirjaudu ensin sisään'}
-          </option>
-          {sheets.map(s => (
-            <option key={s.id} value={s.id}>
-              {s.name} {s.modifiedTime ? `(${new Date(s.modifiedTime).toLocaleDateString('fi')})` : ''}
+      {isBusy ? (
+        <div className="flex items-center gap-3 bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-3">
+          <div className="w-5 h-5 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+          <p className="text-sm text-gray-400">
+            {!isSignedIn ? 'Kirjaudu sisään nähdäksesi laskentataulukot' :
+             !gapiReady ? 'Yhdistetään Google API:in...' :
+             'Ladataan laskentataulukoita...'}
+          </p>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <select
+            value={selected}
+            onChange={handleSelect}
+            className={`flex-1 bg-gray-700 border rounded-lg px-3 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              validation?.valid ? 'border-emerald-600' :
+              validation?.error ? 'border-red-500' : 'border-gray-600'
+            }`}
+          >
+            <option value="">
+              {noSheetsYet ? '-- Ei laskentataulukoita — luo uusi --' : '-- Valitse laskentataulukko --'}
             </option>
-          ))}
-        </select>
+            {sheets.map(s => (
+              <option key={s.id} value={s.id}>
+                {s.name} {s.modifiedTime ? `(${new Date(s.modifiedTime).toLocaleDateString('fi')})` : ''}
+              </option>
+            ))}
+          </select>
 
-        <button
-          onClick={handleCreate}
-          disabled={creating || !isSignedIn}
-          className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-white text-sm font-medium transition-colors shrink-0"
-        >
-          {creating ? 'Luodaan...' : 'Luo uusi'}
-        </button>
-      </div>
+          <button
+            onClick={handleCreate}
+            disabled={creating}
+            className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-white text-sm font-medium transition-colors shrink-0"
+          >
+            {creating ? 'Luodaan...' : 'Luo uusi'}
+          </button>
+        </div>
+      )}
 
       {/* Validation feedback */}
-      {validating && !validation && (
-        <p className="text-xs text-gray-400">Tarkistetaan laskentataulukon rakennetta...</p>
-      )}
+      {validating && <p className="text-xs text-gray-400">Tarkistetaan rakennetta...</p>}
 
       {needsFix && (
         <div className="bg-amber-900/40 border border-amber-700 rounded-lg p-3 text-sm">
-          <p className="text-amber-300 mb-2">
-            ⚠️ Laskentataulukosta puuttuu: {validation.missing.join(', ')}
-          </p>
+          <p className="text-amber-300 mb-2">Puuttuu: {validation.missing.join(', ')}</p>
           <button
             onClick={handleAutoFix}
             disabled={creating}
@@ -170,22 +178,17 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
         </div>
       )}
 
-      {validation?.valid && (
+      {validation?.valid && !isBusy && (
         <p className="text-xs text-emerald-400">
-          ✅ "{validation.name}" — laskentataulukon rakenne kunnossa
+          ✅ "{validation.name}" — rakenne kunnossa
         </p>
       )}
 
-      {validation?.error && (
-        <p className="text-xs text-red-400">{validation.error}</p>
-      )}
-
-      {error && (
-        <p className="text-xs text-red-400">{error}</p>
-      )}
+      {validation?.error && <p className="text-xs text-red-400">{validation.error}</p>}
+      {error && <p className="text-xs text-red-400">{error}</p>}
 
       <p className="text-xs text-gray-500">
-        Valitse olemassa oleva taulukko tai luo uusi. Sovellus tarkistaa ja tarvittaessa lisää puuttuvat välilehdet.
+        Valitse taulukko tai luo uusi. Sovellus tarkistaa rakenteen automaattisesti.
       </p>
     </div>
   );
