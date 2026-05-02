@@ -5,6 +5,7 @@ import { useChoresStore } from '../stores/choresStore';
 import { useGoogleAuth } from '../hooks/useGoogleAuth';
 import { useGoogleSheets } from '../hooks/useGoogleSheets';
 import LoginPrompt from '../components/LoginPrompt';
+import OnboardingGuide from '../components/OnboardingGuide';
 import ChoreList from '../components/ChoreList';
 import ConfirmDialog from '../components/ConfirmDialog';
 import NotificationBar from '../components/NotificationBar';
@@ -61,8 +62,14 @@ export default function HomeView() {
     setSelectedChore(null);
   }
 
+  // ── State machine ──
   if (!isSignedIn) {
     return <LoginPrompt onLogin={login} isLoading={authLoading} error={authError} />;
+  }
+
+  // Signed in but no spreadsheet selected → onboarding
+  if (!spreadsheetId) {
+    return <OnboardingGuide />;
   }
 
   return (
@@ -82,13 +89,11 @@ export default function HomeView() {
         />
       )}
 
-      {!spreadsheetId ? (
-        <div className="text-center py-16">
-          <p className="text-gray-400 mb-3">⚙️</p>
-          <p className="text-gray-400">Avaa asetukset ja syötä Spreadsheet ID tai luo uusi</p>
+      {!gapiReady || (!loaded.current && sheetsLoading) ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+          <p className="text-gray-400 text-sm">Ladataan askareita...</p>
         </div>
-      ) : !gapiReady || (!loaded.current && sheetsLoading) ? (
-        <p className="text-center text-gray-500 py-12">Ladataan askareita...</p>
       ) : sheetsError && !loaded.current ? (
         <div className="text-center py-16">
           <p className="text-red-400 mb-2">⚠️</p>

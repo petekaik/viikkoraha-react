@@ -4,6 +4,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useGoogleAuth } from '../hooks/useGoogleAuth';
 import { useGoogleSheets } from '../hooks/useGoogleSheets';
 import LoginPrompt from '../components/LoginPrompt';
+import OnboardingGuide from '../components/OnboardingGuide';
 import DashboardSummary from '../components/DashboardSummary';
 import HistoryList from '../components/HistoryList';
 import NotificationBar from '../components/NotificationBar';
@@ -56,8 +57,14 @@ export default function DashboardView() {
     }
   }
 
+  // ── State machine ──
   if (!isSignedIn) {
     return <LoginPrompt onLogin={login} isLoading={authLoading} error={authError} />;
+  }
+
+  // Signed in but no spreadsheet selected → onboarding
+  if (!spreadsheetId) {
+    return <OnboardingGuide />;
   }
 
   return (
@@ -78,10 +85,11 @@ export default function DashboardView() {
       )}
       <DashboardSummary pending={summary.pending} totalPaid={summary.totalPaid} />
       <h2 className="text-lg font-semibold text-gray-300 mb-2">Tehtävähistoria</h2>
-      {!spreadsheetId ? (
-        <p className="text-center text-gray-500 py-8">Syötä Spreadsheet ID asetuksista</p>
-      ) : isLoading && bookings.length === 0 ? (
-        <p className="text-center text-gray-500 py-8">Ladataan...</p>
+      {isLoading && bookings.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 gap-3">
+          <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+          <p className="text-gray-400 text-sm">Ladataan...</p>
+        </div>
       ) : (
         <HistoryList bookings={bookings} onApprove={handleApprove} userName={user?.name} />
       )}

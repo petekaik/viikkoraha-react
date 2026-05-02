@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { useSettingsStore } from '../stores/settingsStore';
+import { AppContext } from '../utils/AppContext';
 import SettingsPanel from './SettingsPanel';
 
 export default function AppShell({ children }) {
@@ -72,9 +74,11 @@ export default function AppShell({ children }) {
         </div>
       )}
 
-      {/* Main content */}
+      {/* Main content — expose openSettings to children */}
       <main className="pb-8">
-        {children}
+        <AppContext.Provider value={{ openSettings: () => setShowSettings(true) }}>
+          {children}
+        </AppContext.Provider>
       </main>
     </div>
   );

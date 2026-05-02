@@ -32,11 +32,15 @@ function safeRemove(key) {
   }
 }
 
+/** Default values from build-time env (Vite exposes VITE_ prefixed vars). */
+const DEFAULT_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+const DEFAULT_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY || '';
+
 export const useSettingsStore = create(
   persist(
     (set, get) => ({
-      clientId: '',
-      apiKey: '',
+      clientId: DEFAULT_CLIENT_ID,
+      apiKey: DEFAULT_API_KEY,
       spreadsheetId: DEFAULT_SPREADSHEET_ID,
       _lastSheetSync: null,
 
