@@ -261,4 +261,4 @@ export function useGoogleAuth() {
   };
 }
 
-export { isGapiReady };
+export { isGapiReady, onGapiReady };
