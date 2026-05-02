@@ -2,12 +2,24 @@
  * Settings ↔ Sheets sync utilities.
  * Raw GAPI calls — no React hooks dependency.
  * Used by useGoogleAuth (auto-load on login) and SettingsPanel (save on save).
+ *
+ * IMPORTANT: Always calls gapi.client.setToken() before API ops,
+ * because the GAPI client's cached token may be stale.
  */
 import { useSettingsStore } from '../stores/settingsStore';
+import { useAuthStore } from '../stores/authStore';
 import { SETTINGS_RANGE } from './sheets-schema';
+
+/** Helper: ensure GAPI client has a valid access token before calls. */
+function ensureToken() {
+  const token = useAuthStore.getState().accessToken;
+  if (!token) throw new Error('Ei kirjautunut sisään (accessToken puuttuu)');
+  window.gapi.client.setToken({ access_token: token });
+}
 
 /** Ensure Settings sheet exists in the spreadsheet. */
 export async function ensureSettingsSheet(spreadsheetId) {
+  ensureToken();
   const meta = await window.gapi.client.sheets.spreadsheets.get({ spreadsheetId });
   const existing = (meta.result.sheets || []).map(s => s.properties.title.toLowerCase());
   if (existing.includes('settings')) return;
@@ -24,6 +36,7 @@ export async function ensureSettingsSheet(spreadsheetId) {
 
 /** Load settings key-value map from Settings!A2:B → settingsStore. */
 export async function loadSettingsFromSheet(spreadsheetId) {
+  ensureToken();
   try {
     const res = await window.gapi.client.sheets.spreadsheets.values.get({
       spreadsheetId, range: SETTINGS_RANGE,
@@ -47,6 +60,7 @@ export async function loadSettingsFromSheet(spreadsheetId) {
 
 /** Save current settingsStore to Settings!A2:B. */
 export async function saveSettingsToSheet(spreadsheetId) {
+  ensureToken();
   const rows = useSettingsStore.getState().toSheetRows();
   while (rows.length < 6) rows.push(['', '']);
   await window.gapi.client.sheets.spreadsheets.values.update(
