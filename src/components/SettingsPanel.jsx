@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useAuthStore } from '../stores/authStore';
+import { useGoogleAuth } from '../hooks/useGoogleAuth';
 import { useGoogleSheets } from '../hooks/useGoogleSheets';
 import { saveSettingsToSheet, ensureSettingsSheet } from '../utils/settingsSync';
 import { validateClientId, validateApiKey } from '../utils/validation';
@@ -12,15 +13,16 @@ export default function SettingsPanel() {
     useSettingsStore();
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
   const signOut = useAuthStore((s) => s.signOut);
-  const { initSheets, isLoading: sheetsLoading } = useGoogleSheets();
+  const { logout } = useGoogleAuth();
+  const { initSheets } = useGoogleSheets();
 
   const [form, setForm] = useState({ clientId: '', apiKey: '' });
   const [errors, setErrors] = useState({});
   const [notification, setNotification] = useState(null);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
-  // Track selected spreadsheet name for display
   const [spreadsheetName, setSpreadsheetName] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
     setForm({ clientId, apiKey });
@@ -35,8 +37,8 @@ export default function SettingsPanel() {
     const e = {};
     const c = validateClientId(form.clientId);
     const a = validateApiKey(form.apiKey);
-    if (!c.valid) e.clientId = c.error;
-    if (!a.valid) e.apiKey = a.error;
+    if (form.clientId && !c.valid) e.clientId = c.error;
+    if (form.apiKey && !a.valid) e.apiKey = a.error;
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -48,7 +50,6 @@ export default function SettingsPanel() {
 
     setSaving(true);
     try {
-      // Sync to sheet if logged in and GAPI ready
       if (isSignedIn && window.gapi?.client?.sheets && spreadsheetId) {
         try {
           await ensureSettingsSheet(spreadsheetId);
@@ -85,18 +86,9 @@ export default function SettingsPanel() {
     setNotification({ type: 'success', message: 'Kaikki tiedot nollattu' });
   }
 
-  async function handleCreateNew() {
-    if (!isSignedIn) {
-      setNotification({ type: 'error', message: 'Kirjaudu ensin sisään' });
-      return;
-    }
-    try {
-      await initSheets();
-      setNotification({ type: 'success', message: 'Taulukko alustettu' });
-    } catch (err) {
-      const msg = err?.message || err?.result?.error?.message || 'Alustus epäonnistui';
-      setNotification({ type: 'error', message: msg });
-    }
+  function handleLogout() {
+    logout();
+    setNotification({ type: 'success', message: 'Kirjauduttu ulos' });
   }
 
   return (
@@ -109,52 +101,83 @@ export default function SettingsPanel() {
         />
       )}
 
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">
-          Google Client ID
-        </label>
-        <input
-          type="text"
-          value={form.clientId}
-          onChange={(e) => handleChange('clientId', e.target.value)}
-          placeholder="xxx.apps.googleusercontent.com"
-          className={`w-full bg-gray-700 border rounded-lg px-3 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            errors.clientId ? 'border-red-500' : 'border-gray-600'
-          }`}
-        />
-        <p className="text-xs text-gray-500 mt-1">
-          Google Cloud Consolesta — OAuth 2.0 Client ID (Desktop app)
-        </p>
-        {errors.clientId && (
-          <p className="text-xs text-red-400 mt-1">{errors.clientId}</p>
-        )}
-      </div>
+      {/* Kirjaudu ulos — näkyy vain kun sisäänkirjautuneena */}
+      {isSignedIn && (
+        <button
+          onClick={handleLogout}
+          className="w-full bg-gray-700 hover:bg-red-700 text-gray-300 hover:text-white font-semibold py-3 rounded-xl transition-colors"
+        >
+          🔓 Kirjaudu ulos
+        </button>
+      )}
 
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">API-avain</label>
-        <input
-          type="text"
-          value={form.apiKey}
-          onChange={(e) => handleChange('apiKey', e.target.value)}
-          placeholder="AIzaSy..."
-          className={`w-full bg-gray-700 border rounded-lg px-3 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            errors.apiKey ? 'border-red-500' : 'border-gray-600'
-          }`}
-        />
-        <p className="text-xs text-gray-500 mt-1">
-          Google Cloud Consolesta — API Key (Sheets API käytössä)
-        </p>
-        {errors.apiKey && (
-          <p className="text-xs text-red-400 mt-1">{errors.apiKey}</p>
-        )}
-      </div>
-
-      {/* ── Spreadsheet picker replaces old text field ── */}
+      {/* Laskentataulukko — aina näkyvissä */}
       <SpreadsheetPicker
         value={spreadsheetId}
         onChange={handleSpreadsheetChange}
         isSignedIn={isSignedIn}
       />
+
+      {/* Edistyneet asetukset — piilossa oletuksena */}
+      <div>
+        <button
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-300 transition-colors"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className={`w-4 h-4 transition-transform ${showAdvanced ? 'rotate-90' : ''}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+          Edistyneet asetukset
+        </button>
+
+        {showAdvanced && (
+          <div className="mt-3 space-y-4 pl-1">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Google Client ID
+              </label>
+              <input
+                type="text"
+                value={form.clientId}
+                onChange={(e) => handleChange('clientId', e.target.value)}
+                placeholder="xxx.apps.googleusercontent.com (tyhjä = käytä oletusta)"
+                className={`w-full bg-gray-700 border rounded-lg px-3 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.clientId ? 'border-red-500' : 'border-gray-600'
+                }`}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Vain jos käytät omaa Google Cloud -projektia
+              </p>
+              {errors.clientId && (
+                <p className="text-xs text-red-400 mt-1">{errors.clientId}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">API-avain</label>
+              <input
+                type="text"
+                value={form.apiKey}
+                onChange={(e) => handleChange('apiKey', e.target.value)}
+                placeholder="AIzaSy... (tyhjä = käytä oletusta)"
+                className={`w-full bg-gray-700 border rounded-lg px-3 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.apiKey ? 'border-red-500' : 'border-gray-600'
+                }`}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Vain jos käytät omaa Google Cloud -projektia
+              </p>
+              {errors.apiKey && (
+                <p className="text-xs text-red-400 mt-1">{errors.apiKey}</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       <button
         onClick={handleSave}
