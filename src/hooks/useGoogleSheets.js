@@ -6,6 +6,8 @@ import {
 } from '../utils/sheets-schema';
 import { isGapiReady } from './useGoogleAuth';
 
+import { getISOWeek } from '../utils/dateUtils';
+
 export function useGoogleSheets() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const user = useAuthStore((s) => s.user);
@@ -150,6 +152,7 @@ export function useGoogleSheets() {
   const appendBooking = useCallback((choreId, description, value) =>
     call(async () => {
       const userName = user?.name || 'Tuntematon';
+      const weekNumber = getISOWeek();
       await window.gapi.client.sheets.spreadsheets.values.append(
         {
           spreadsheetId, range: 'Bookings!A2:G',
@@ -158,7 +161,7 @@ export function useGoogleSheets() {
         {
           values: [[
             new Date().toISOString(), choreId, description, value,
-            '=WEEKNUM(LEFT(A:A,10), 2)', userName, 'pending',
+            weekNumber, userName, 'pending',
           ]],
         },
       );
@@ -233,8 +236,8 @@ export function useGoogleSheets() {
           { spreadsheetId, range: 'Sums!A1:B', valueInputOption: 'USER_ENTERED' },
           {
             values: [
-              ['Pending', '=SUMIF(Bookings!G2:G, "pending", Bookings!D2:D)'],
-              ['Paid', '=SUMIF(Bookings!G2:G, "paid", Bookings!D2:D)'],
+              ['Pending', '=SUMIF(Bookings!G2:G; "pending"; Bookings!D2:D)'],
+              ['Paid', '=SUMIF(Bookings!G2:G; "paid"; Bookings!D2:D)'],
             ],
           },
         );
@@ -300,8 +303,8 @@ export function useGoogleSheets() {
         { spreadsheetId: newId, range: 'Sums!A1:B', valueInputOption: 'USER_ENTERED' },
         {
           values: [
-            ['Pending', '=SUMIF(Bookings!G2:G, "pending", Bookings!D2:D)'],
-            ['Paid', '=SUMIF(Bookings!G2:G, "paid", Bookings!D2:D)'],
+            ['Pending', '=SUMIF(Bookings!G2:G; "pending"; Bookings!D2:D)'],
+            ['Paid', '=SUMIF(Bookings!G2:G; "paid"; Bookings!D2:D)'],
           ],
         },
       );
