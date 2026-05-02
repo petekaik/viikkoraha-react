@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useGoogleSheets } from '../hooks/useGoogleSheets';
-import { useGoogleAuth } from '../hooks/useGoogleAuth';
+import { isGapiReady, onGapiReady } from '../hooks/useGoogleAuth';
 
 /**
  * Dropdown picker for selecting a Google Sheet.
@@ -15,7 +15,8 @@ import { useGoogleAuth } from '../hooks/useGoogleAuth';
 export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
   const { listSpreadsheets, createNewSpreadsheet, validateSpreadsheet, initSheets } =
     useGoogleSheets();
-  const { gapiReady } = useGoogleAuth();
+
+  const [gapiReady, setGapiReady] = useState(isGapiReady());
 
   const [sheets, setSheets] = useState([]);          // [{id, name, modifiedTime}]
   const [loading, setLoading] = useState(false);
@@ -25,6 +26,12 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
   const [selected, setSelected] = useState('');       // current id selected in dropdown
   const [validation, setValidation] = useState(null);  // { valid, missing, name }
   const [loadedOnce, setLoadedOnce] = useState(false);
+
+  // Listen for GAPI readiness globally (not via hook — avoids stale closure) 
+  useEffect(() => {
+    if (isGapiReady()) { setGapiReady(true); return; }
+    onGapiReady(() => setGapiReady(true));
+  }, []);
 
   // ── Load spreadsheets when signed in AND GAPI is ready ──
   const load = useCallback(async () => {
