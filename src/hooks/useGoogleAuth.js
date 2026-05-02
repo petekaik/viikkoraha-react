@@ -105,7 +105,7 @@ async function initGapiClient(apiKey, token) {
 }
 
 function isGapiReady() {
-  return gapiInitialized && !!window.gapi?.client?.sheets;
+  return gapiInitialized && !!window.gapi?.client?.sheets && !!window.gapi?.client?.drive;
 }
 
 // ── useGoogleAuth hook ──
