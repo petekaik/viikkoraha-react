@@ -114,16 +114,24 @@ export function useGoogleSheets() {
     }),
   [call]);
 
-  /** List user's spreadsheets via Drive API (name + id). */
+  /** List user's spreadsheets via Drive API REST (name + id).
+   *  Direct fetch avoids GAPI discovery doc dependency issues. */
   const listSpreadsheets = useCallback(() =>
     call(async () => {
-      const res = await window.gapi.client.drive.files.list({
+      const token = window.gapi.client.getToken();
+      const params = new URLSearchParams({
         q: "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
         orderBy: 'modifiedTime desc',
-        pageSize: 50,
-        fields: 'files(id, name, modifiedTime)',
+        pageSize: '50',
+        fields: 'files(id,name,modifiedTime)',
       });
-      return (res.result.files || []).map(f => ({
+      const res = await fetch(
+        `https://www.googleapis.com/drive/v3/files?${params}`,
+        { headers: { Authorization: `Bearer ${token.access_token}` } },
+      );
+      if (!res.ok) throw new Error(`Drive API: ${res.status}`);
+      const data = await res.json();
+      return (data.files || []).map(f => ({
         id: f.id,
         name: f.name,
         modifiedTime: f.modifiedTime,

@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:dev": "vitest run --config vitest.dev.config.js",
     "test:smoke": "vitest run --config vitest.smoke.config.js"
   },
   "dependencies": {
