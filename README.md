@@ -36,11 +36,64 @@ Sovellus on **full client-side** — kaikki API-kutsut menevät suoraan selaimes
 ### Vaatimukset
 
 - Node.js 18+
-- [Google Cloud Console](https://console.cloud.google.com/) -projekti:
-  - Google Sheets API enabled
-  - OAuth 2.0 Client ID (Web application -tyyppi)
-  - API Key (rajoitettu Sheets API:lle)
+- Google Cloud Console -projekti (katso ohjeet alla)
 - Google Sheets -taulukko (voi luoda sovelluksessa)
+
+### Google Cloud Console -asetukset
+
+Sovellus tarvitsee Google Cloud -projektin, jossa on aktivoitu **kaksi API:a**, OAuth 2.0 -asiakastunnus ja API-avain.
+
+#### 1. Luo Google Cloud -projekti
+
+1. Mene osoitteeseen [console.cloud.google.com](https://console.cloud.google.com/)
+2. Luo uusi projekti (tai valitse olemassa oleva)
+3. Anna projektille nimi, esim. "Viikkoraha"
+
+#### 2. Aktivoi tarvittavat API:t
+
+Molemmat API:t on aktivoitava **erikseen** — Sheets API:n aktivointi ei automaattisesti aktivoi Drive API:a.
+
+| API | Linkki aktivointiin | Käyttötarkoitus |
+|-----|-------------------|-----------------|
+| **Google Sheets API** | [Aktivoi Sheets API](https://console.cloud.google.com/apis/library/sheets.googleapis.com) | Askareiden luku/kirjoitus, yhteenvedot |
+| **Google Drive API** | [Aktivoi Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com) | Käyttäjän omien taulukoiden listaus alasvetovalikkoon |
+
+> ⚠️ **Ilman Drive API:n aktivointia** taulukkovalikko ei toimi — näkyviin tulee virhe "Drive API has not been used in project".
+
+#### 3. Luo OAuth 2.0 -asiakastunnus
+
+1. Siirry: **APIs & Services → Credentials**
+2. Klikkaa **Create Credentials → OAuth client ID**
+3. Valitse **Web application**
+4. Täytä:
+   - **Name:** Viikkoraha
+   - **Authorised JavaScript origins:** `https://petekaik.github.io` (oma GitHub Pages -domain)
+   - Klikkaa **Create**
+5. Kopioi **Client ID** talteen (muotoa `XXXXXXXXXXXX-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com`)
+
+#### 4. Luo API-avain
+
+1. **APIs & Services → Credentials**
+2. Klikkaa **Create Credentials → API key**
+3. Kopioi avain talteen (muotoa `AIzaSy...`)
+
+> 🔒 **Suositus:** Rajoita API-avain **Credentials → API Key → Edit** -kohdassa:
+> - **Application restrictions:** `HTTP referrers` → lisää `*.github.io/*`
+> - **API restrictions:** `Google Sheets API` ja `Google Drive API`
+
+#### 5. Syötä tunnukset sovellukseen
+
+1. Avaa Viikkoraha
+2. ⚙️ → Asetukset
+3. Syötä **Client ID** ja **API-avain**
+4. Tallenna → Kirjaudu Google-tililläsi
+5. Valitse taulukko tai luo uusi
+
+> 💡 **Vinkki:** Voit esitäyttää Client ID:n ja API-avaimen luomalla `.env`-tiedoston:
+> ```bash
+> cp .env.example .env
+> ```
+> ja täyttämällä `VITE_GOOGLE_CLIENT_ID` ja `VITE_GOOGLE_API_KEY`. Tällöin sovellus on heti käyttövalmis ilman asetusten syöttämistä. Spreadsheet ID täytetään sovelluksessa.
 
 ### Kehitysympäristö
 
