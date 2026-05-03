@@ -3,15 +3,16 @@
 #
 # 1. Aja testit
 # 2. Buildaa
-# 3. Pushaa dist/ → gh-pages branch
+# 3. Kopioi dist/ → petekaik.github.io-repon viikkoraha/-hakemistoon
+# 4. Commit + push petekaik.github.io
 #
 # Käyttö: ./scripts/deploy.sh
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-REMOTE="${DEPLOY_REMOTE:-origin}"
-BRANCH="${DEPLOY_BRANCH:-gh-pages}"
+PAGES_DIR="${PAGES_DIR:-$HOME/projects/petekaik.github.io}"
+DEPLOY_PATH="$PAGES_DIR/viikkoraha"
 
 echo "═══ 1. TESTIT ═══"
 npm test
@@ -29,23 +30,34 @@ if ! git diff-index --quiet HEAD --; then
     exit 1
 fi
 
-CURRENT_BRANCH=$(git symbolic-ref --short HEAD)
-COMMIT_MSG="deploy: $(date -u +'%Y-%m-%d %H:%M UTC') — $(git rev-parse --short HEAD)"
+# Tarkista, ettei pages-repossa ole commitoimattomia muutoksia
+if ! git -C "$PAGES_DIR" diff-index --quiet HEAD --; then
+    echo "❌ Pages-repossa ($PAGES_DIR) on commitoimattomia muutoksia. Siivoa ensin."
+    exit 1
+fi
 
-# Rakenna gh-pages commit dist/-kansiosta orphan-branchilla
-TMP_BRANCH="gh-pages-deploy-$$"
-git checkout --orphan "$TMP_BRANCH"
-git rm -rf --quiet . 2>/dev/null || true
-cp -r dist/* .
-git add -A
-git commit -m "$COMMIT_MSG"
+# Varmista, että pages-repo on master-branchilla
+PAGES_BRANCH=$(git -C "$PAGES_DIR" symbolic-ref --short HEAD)
+if [ "$PAGES_BRANCH" != "master" ]; then
+    echo "❌ Pages-repo ei ole master-branchilla (nykyinen: $PAGES_BRANCH)"
+    exit 1
+fi
 
-echo "  Push $REMOTE/$BRANCH..."
-git push "$REMOTE" "$TMP_BRANCH:$BRANCH" --force
+# Pullaa uusin tila pages-repoon
+git -C "$PAGES_DIR" pull --ff-only origin master
 
-# Palaa ja siivoa
-git checkout "$CURRENT_BRANCH"
-git branch -D "$TMP_BRANCH"
+# Kopioi build-tiedostot
+rm -rf "$DEPLOY_PATH"
+cp -r dist "$DEPLOY_PATH"
+
+COMMIT_MSG="Deploy Viikkoraha: $(date -u +'%Y-%m-%d %H:%M UTC') — $(
+    cd "$PAGES_DIR" && git rev-parse --short HEAD
+)"
+
+# Commit + push pages-repossa
+git -C "$PAGES_DIR" add "$DEPLOY_PATH"
+git -C "$PAGES_DIR" commit -m "$COMMIT_MSG"
+git -C "$PAGES_DIR" push origin master
 
 echo ""
 echo "✅ Deploy valmis: https://gitpages.morgeweb.com/viikkoraha/"
