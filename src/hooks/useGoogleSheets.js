@@ -298,7 +298,7 @@ export function useGoogleSheets() {
       let pending = 0;
       let totalPaid = 0;
       for (const row of rows) {
-        const status = (row[6] || '').toLowerCase().trim();
+        const status = (row[5] || '').toLowerCase().trim();
         const val = parseFinnishNumber(row[3]);
         if (status === 'paid') totalPaid += val;
         else if (status === 'pending') pending += val;
@@ -352,8 +352,8 @@ export function useGoogleSheets() {
           { spreadsheetId: sid, range: 'Sums!A1:B', valueInputOption: 'USER_ENTERED' },
           {
             values: [
-              ['Pending', '=SUMIF(Bookings!G:G; "pending"; Bookings!D:D)'],
-              ['Paid', '=SUMIF(Bookings!G:G; "paid"; Bookings!D:D)'],
+            ['Pending', '=SUMIF(Bookings!F:F; "pending"; Bookings!D:D)'],
+            ['Paid', '=SUMIF(Bookings!F:F; "paid"; Bookings!D:D)'],
             ],
           },
         );
@@ -432,8 +432,8 @@ export function useGoogleSheets() {
         { spreadsheetId: newId, range: 'Sums!A1:B', valueInputOption: 'USER_ENTERED' },
         {
           values: [
-            ['Pending', '=SUMIF(Bookings!G:G; "pending"; Bookings!D:D)'],
-            ['Paid', '=SUMIF(Bookings!G:G; "paid"; Bookings!D:D)'],
+            ['Pending', '=SUMIF(Bookings!F:F; "pending"; Bookings!D:D)'],
+            ['Paid', '=SUMIF(Bookings!F:F; "paid"; Bookings!D:D)'],
           ],
         },
       );
