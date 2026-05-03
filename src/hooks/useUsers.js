@@ -65,14 +65,22 @@ export function useUsers() {
     [spreadsheetId, call],
   );
 
-  /** Save user list to Users!A2:C. Overwrites existing data. */
+  /** Save user list to Users!A2:C. Overwrites existing data — clears stale rows first. */
   const saveUsers = useCallback(
     (users) =>
       call(async () => {
         await ensureUsersSheet();
         const rows = users.map((u) => [u.email, u.name, u.role]);
-        // pad to avoid shrinking
+        // pad to avoid shrinking (and to clear stale data when list shrinks)
         while (rows.length < 1) rows.push(['', '', '']);
+
+        // Clear entire data range to prevent stale rows when user list shrinks.
+        // values.update only writes to its exact range — rows beyond it stay.
+        await window.gapi.client.sheets.spreadsheets.values.clear({
+          spreadsheetId,
+          range: 'Users!A2:C',
+        });
+
         await window.gapi.client.sheets.spreadsheets.values.update(
           {
             spreadsheetId,
