@@ -1,5 +1,6 @@
 export const CHORES_RANGE = 'Chores!A2:D';
-export const BOOKINGS_RANGE = 'Bookings!A2:J';
+export const BOOKINGS_RANGE = 'Bookings!A2:I';
+export const BOOKINGS_SHEET_RANGE = 'Bookings!A1:I';
 export const SUMS_RANGE = 'Sums!A2:B';
 export const SETTINGS_RANGE = 'Settings!A2:B';
 export const USERS_RANGE = 'Users!A2:C';
@@ -68,7 +69,6 @@ export const BOOKINGS_HEADERS = [
   'ChoreID',
   'Description',
   'Value',
-  'WeekNumber',
   'UserName',
   'Status',
   'ApprovedBy',

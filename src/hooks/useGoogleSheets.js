@@ -245,12 +245,11 @@ export function useGoogleSheets() {
         choreId: row[1],
         description: row[2] || row[1],
         value: parseFinnishNumber(row[3]),
-        weekNumber: row[4],
-        userName: row[5] || '',
-        status: row[6] || 'pending',
-        approvedBy: row[7] || '',
-        approvedAt: row[8] || '',
-        userEmail: row[9] || '',
+        userName: row[4] || '',
+        status: row[5] || 'pending',
+        approvedBy: row[6] || '',
+        approvedAt: row[7] || '',
+        userEmail: row[8] || '',
         rowIndex: i,
       })).reverse();
     }),
@@ -260,16 +259,15 @@ export function useGoogleSheets() {
     call(async () => {
       const userName = user?.name || 'Tuntematon';
       const userEmail = user?.email || '';
-      const weekNumber = getISOWeek();
       await window.gapi.client.sheets.spreadsheets.values.append(
         {
-          spreadsheetId, range: 'Bookings!A2:J',
+          spreadsheetId, range: 'Bookings!A2:I',
           valueInputOption: 'USER_ENTERED', insertDataOption: 'INSERT_ROWS',
         },
         {
           values: [[
             new Date().toISOString(), choreId, description, value,
-            weekNumber, userName, 'pending', '', '', userEmail,
+            userName, 'pending', '', '', userEmail,
           ]],
         },
       );
@@ -282,7 +280,7 @@ export function useGoogleSheets() {
       const now = new Date().toISOString();
       await window.gapi.client.sheets.spreadsheets.values.update(
         {
-          spreadsheetId, range: `Bookings!G${sheetRow}:I${sheetRow}`,
+          spreadsheetId, range: `Bookings!F${sheetRow}:H${sheetRow}`,
           valueInputOption: 'USER_ENTERED',
         },
         { values: [[newStatus, approvedBy || '', now]] },
@@ -339,8 +337,8 @@ export function useGoogleSheets() {
           { requests: [{ addSheet: { properties: { title: 'Bookings' } } }] },
         );
         await window.gapi.client.sheets.spreadsheets.values.update(
-          { spreadsheetId: sid, range: 'Bookings!A1:J', valueInputOption: 'USER_ENTERED' },
-          { values: [['Timestamp', 'ChoreID', 'Description', 'Value', 'WeekNumber', 'UserName', 'Status', 'ApprovedBy', 'ApprovedAt', 'UserEmail']] },
+          { spreadsheetId: sid, range: 'Bookings!A1:I', valueInputOption: 'USER_ENTERED' },
+          { values: [['Timestamp', 'ChoreID', 'Description', 'Value', 'UserName', 'Status', 'ApprovedBy', 'ApprovedAt', 'UserEmail']] },
         );
         created.push('Bookings');
       }
@@ -425,8 +423,8 @@ export function useGoogleSheets() {
 
       // Populate Bookings
       await window.gapi.client.sheets.spreadsheets.values.update(
-        { spreadsheetId: newId, range: 'Bookings!A1:J', valueInputOption: 'USER_ENTERED' },
-        { values: [['Timestamp', 'ChoreID', 'Description', 'Value', 'WeekNumber', 'UserName', 'Status', 'ApprovedBy', 'ApprovedAt', 'UserEmail']] },
+        { spreadsheetId: newId, range: 'Bookings!A1:I', valueInputOption: 'USER_ENTERED' },
+        { values: [['Timestamp', 'ChoreID', 'Description', 'Value', 'UserName', 'Status', 'ApprovedBy', 'ApprovedAt', 'UserEmail']] },
       );
 
       // Sums

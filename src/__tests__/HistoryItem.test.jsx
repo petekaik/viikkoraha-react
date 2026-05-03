@@ -91,7 +91,7 @@ describe('HistoryItem', () => {
 
     rerender(<HistoryItem booking={booking} onUnpay={onUnpay} isExpanded={true} />);
 
-    const unpayBtn = screen.getByText('↩️ Palauta maksamatta-tilaan');
+    const unpayBtn = screen.getByText('↩️ Palauta odottavaksi');
     await userEvent.click(unpayBtn);
     expect(onUnpay).toHaveBeenCalledWith(3);
   });

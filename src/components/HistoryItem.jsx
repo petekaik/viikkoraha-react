@@ -64,7 +64,7 @@ export default function HistoryItem({
         </div>
       </div>
 
-      {/* Expanded detail + actions */}
+      {/* Expanded detail + actions — all transitions always available */}
       {isExpanded && (
         <div className="bg-gray-800/50 rounded-lg px-4 py-3 mt-1 mb-2 text-sm space-y-2">
           {(isPaid || isRejected) && booking.approvedBy && (
@@ -85,22 +85,17 @@ export default function HistoryItem({
             </p>
           )}
 
+          {/* Pending: → paid or rejected */}
           {isPending && (
             <div className="flex gap-2 flex-wrap">
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onApprove?.(booking.rowIndex);
-                }}
+                onClick={(e) => { e.stopPropagation(); onApprove?.(booking.rowIndex); }}
                 className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 rounded-md text-white text-xs font-medium transition-colors"
               >
                 ✅ Hyväksy
               </button>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onReject?.(booking.rowIndex);
-                }}
+                onClick={(e) => { e.stopPropagation(); onReject?.(booking.rowIndex); }}
                 className="px-3 py-1.5 bg-red-700 hover:bg-red-600 rounded-md text-white text-xs font-medium transition-colors"
               >
                 ❌ Hylkää
@@ -108,16 +103,38 @@ export default function HistoryItem({
             </div>
           )}
 
+          {/* Paid: → pending or rejected */}
           {isPaid && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onUnpay?.(booking.rowIndex);
-                }}
+                onClick={(e) => { e.stopPropagation(); onUnpay?.(booking.rowIndex); }}
                 className="px-3 py-1.5 bg-gray-600 hover:bg-gray-500 rounded-md text-white text-xs font-medium transition-colors"
               >
-                ↩️ Palauta maksamatta-tilaan
+                ↩️ Palauta odottavaksi
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onReject?.(booking.rowIndex); }}
+                className="px-3 py-1.5 bg-red-700 hover:bg-red-600 rounded-md text-white text-xs font-medium transition-colors"
+              >
+                ❌ Hylkää
+              </button>
+            </div>
+          )}
+
+          {/* Rejected: → paid or pending */}
+          {isRejected && (
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={(e) => { e.stopPropagation(); onApprove?.(booking.rowIndex); }}
+                className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 rounded-md text-white text-xs font-medium transition-colors"
+              >
+                ✅ Hyväksy
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onUnpay?.(booking.rowIndex); }}
+                className="px-3 py-1.5 bg-gray-600 hover:bg-gray-500 rounded-md text-white text-xs font-medium transition-colors"
+              >
+                ↩️ Palauta odottavaksi
               </button>
             </div>
           )}
