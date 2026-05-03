@@ -1,4 +1,5 @@
 import { getISOWeek } from '../utils/dateUtils';
+import { useTranslation } from '../i18n/useTranslation';
 
 const BAR_MAX_HEIGHT = 160;
 const CHART_HEIGHT = 220;
@@ -6,10 +7,12 @@ const PADDING = { top: 10, right: 12, bottom: 30, left: 40 };
 const BAR_WIDTH = Math.min(36, 48);
 
 export default function WeeklyChart({ bookings, className = '' }) {
+  const { t } = useTranslation();
+
   if (!bookings || bookings.length === 0) {
     return (
       <div className={`flex items-center justify-center py-12 ${className}`}>
-        <p className="text-gray-500 text-sm">Ei dataa graafiin vielä.</p>
+        <p className="text-gray-500 text-sm">{t('ui.chart.empty')}</p>
       </div>
     );
   }
@@ -138,7 +141,7 @@ export default function WeeklyChart({ bookings, className = '' }) {
                 fontSize="10"
                 fontFamily="system-ui, sans-serif"
               >
-                V{week}
+                {t('ui.chart.weekPrefix')}{week}
               </text>
               {/* Tooltip value */}
               {totalVal > 0 && (
@@ -163,11 +166,11 @@ export default function WeeklyChart({ bookings, className = '' }) {
       <div className="flex justify-center gap-4 mt-3">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-green-500" />
-          <span className="text-xs text-gray-400">Maksettu</span>
+          <span className="text-xs text-gray-400">{t('ui.statusLong.paid')}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-amber-600/40" />
-          <span className="text-xs text-gray-400">Odottaa</span>
+          <span className="text-xs text-gray-400">{t('ui.status.pending')}</span>
         </div>
       </div>
     </div>

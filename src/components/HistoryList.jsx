@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import HistoryItem from './HistoryItem';
 import { getISOWeek } from '../utils/dateUtils';
+import { useTranslation } from '../i18n/useTranslation';
 
 export default function HistoryList({ bookings, onApprove, onReject, onUnpay, userName }) {
   const [expandedItem, setExpandedItem] = useState(null);
+  const { t } = useTranslation();
 
   if (!bookings || bookings.length === 0) {
     return (
       <div className="text-center text-gray-500 py-12">
         <p className="text-lg mb-1">📋</p>
-        <p>Ei tehtävähistoriaa</p>
+        <p>{t('ui.history.empty')}</p>
       </div>
     );
   }
@@ -44,7 +46,7 @@ export default function HistoryList({ bookings, onApprove, onReject, onUnpay, us
       {sortedWeeks.map(([week, items]) => (
         <div key={week} className="mb-2">
           <p className="text-xs text-gray-500 uppercase tracking-wide mt-3 mb-1 font-semibold">
-            Viikko {week}
+            {t('ui.history.weekLabel')} {week}
           </p>
           {items.map((b, i) => (
             <HistoryItem

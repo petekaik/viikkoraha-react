@@ -1,10 +1,11 @@
+import { useTranslation } from '../i18n/useTranslation';
 export default function LoginPrompt({ onLogin, isLoading, error }) {
   return (
     <div className="flex min-h-[80vh] items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-2xl bg-gray-800 p-8 text-center shadow-xl">
         <h1 className="text-3xl font-bold text-white mb-2">Viikkoraha</h1>
         <p className="text-gray-400 text-sm mb-8">
-          Kotitöiden seurantaan ja viikkorahan hallintaan
+          {t('ui.app.tagline')}
         </p>
 
         {isLoading ? (

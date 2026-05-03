@@ -1,3 +1,5 @@
+import { useTranslation } from '../i18n/useTranslation';
+
 export default function HistoryItem({
   booking,
   onApprove,
@@ -6,6 +8,7 @@ export default function HistoryItem({
   onToggleExpand,
   isExpanded,
 }) {
+  const { t } = useTranslation();
   const isPending = booking.status === 'pending';
   const isPaid = booking.status === 'paid';
   const isRejected = booking.status === 'rejected';
@@ -21,18 +24,18 @@ export default function HistoryItem({
     if (isPending)
       return (
         <span className="text-xs bg-amber-900/50 text-amber-400 px-2 py-0.5 rounded-full font-medium">
-          odottaa
+          {t('ui.status.pending')}
         </span>
       );
     if (isRejected)
       return (
         <span className="text-xs bg-red-900/50 text-red-400 px-2 py-0.5 rounded-full font-medium">
-          hylätty
+          {t('ui.status.rejected')}
         </span>
       );
     return (
       <span className="text-xs bg-green-900/50 text-green-400 px-2 py-0.5 rounded-full font-medium">
-        maksettu
+        {t('ui.status.paid')}
       </span>
     );
   };
@@ -53,7 +56,7 @@ export default function HistoryItem({
             {booking.description || booking.choreId}
           </span>
           <span className="text-xs text-gray-500">
-            {date} — {booking.userName || 'Tuntematon'}
+            {date} — {booking.userName || t('ui.unknown')}
           </span>
         </div>
         <div className="flex items-center gap-2 ml-2 shrink-0">
@@ -69,7 +72,7 @@ export default function HistoryItem({
         <div className="bg-gray-800/50 rounded-lg px-4 py-3 mt-1 mb-2 text-sm space-y-2">
           {(isPaid || isRejected) && booking.approvedBy && (
             <p className="text-gray-400">
-              {isPaid ? 'Maksettu' : 'Hylätty'}: {booking.approvedBy}
+              {isPaid ? t('ui.statusLong.paid') : t('ui.statusLong.rejected')}: {booking.approvedBy}
               {booking.approvedAt && (
                 <>
                   {' '}
@@ -92,13 +95,13 @@ export default function HistoryItem({
                 onClick={(e) => { e.stopPropagation(); onApprove?.(booking.rowIndex); }}
                 className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 rounded-md text-white text-xs font-medium transition-colors"
               >
-                ✅ Hyväksy
+                {t('ui.actions.approve')}
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onReject?.(booking.rowIndex); }}
                 className="px-3 py-1.5 bg-red-700 hover:bg-red-600 rounded-md text-white text-xs font-medium transition-colors"
               >
-                ❌ Hylkää
+                {t('ui.actions.reject')}
               </button>
             </div>
           )}
@@ -110,13 +113,13 @@ export default function HistoryItem({
                 onClick={(e) => { e.stopPropagation(); onUnpay?.(booking.rowIndex); }}
                 className="px-3 py-1.5 bg-gray-600 hover:bg-gray-500 rounded-md text-white text-xs font-medium transition-colors"
               >
-                ↩️ Palauta odottavaksi
+                {t('ui.actions.backToPending')}
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onReject?.(booking.rowIndex); }}
                 className="px-3 py-1.5 bg-red-700 hover:bg-red-600 rounded-md text-white text-xs font-medium transition-colors"
               >
-                ❌ Hylkää
+                {t('ui.actions.reject')}
               </button>
             </div>
           )}
@@ -128,13 +131,13 @@ export default function HistoryItem({
                 onClick={(e) => { e.stopPropagation(); onApprove?.(booking.rowIndex); }}
                 className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 rounded-md text-white text-xs font-medium transition-colors"
               >
-                ✅ Hyväksy
+                {t('ui.actions.approve')}
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onUnpay?.(booking.rowIndex); }}
                 className="px-3 py-1.5 bg-gray-600 hover:bg-gray-500 rounded-md text-white text-xs font-medium transition-colors"
               >
-                ↩️ Palauta odottavaksi
+                {t('ui.actions.backToPending')}
               </button>
             </div>
           )}

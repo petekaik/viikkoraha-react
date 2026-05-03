@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from '../i18n/useTranslation';
 
 export default function ConfirmDialog({ chore, user, onConfirm, onCancel }) {
   const cancelRef = useRef(null);
@@ -38,7 +39,7 @@ export default function ConfirmDialog({ chore, user, onConfirm, onCancel }) {
         </p>
         {user && (
           <p className="text-gray-400 text-xs mb-4 truncate">
-            {user.name || 'Käyttäjä'}
+            {user.name || t('ui.unknownUser')}
             {user.email && <span className="text-gray-500"> · {user.email}</span>}
           </p>
         )}
