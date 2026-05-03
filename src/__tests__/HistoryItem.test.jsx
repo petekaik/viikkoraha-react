@@ -96,6 +96,56 @@ describe('HistoryItem', () => {
     expect(onUnpay).toHaveBeenCalledWith(3);
   });
 
+  it('shows unpay button for rejected items when expanded', async () => {
+    const onUnpay = vi.fn();
+    const booking = {
+      timestamp: '2026-05-01T10:00:00Z',
+      choreId: 'siivous',
+      description: 'Siivous',
+      value: 2,
+      status: 'rejected',
+      userName: 'Matti',
+      rowIndex: 3,
+      approvedBy: 'Pomo',
+      approvedAt: '2026-05-02T12:00:00Z',
+    };
+    const { rerender } = render(<HistoryItem booking={booking} onUnpay={onUnpay} />);
+
+    const row = screen.getByText('Siivous').closest('[role="button"]');
+    await userEvent.click(row);
+
+    rerender(<HistoryItem booking={booking} onUnpay={onUnpay} isExpanded={true} />);
+
+    const unpayBtn = screen.getByText('↩️ Palauta odottavaksi');
+    await userEvent.click(unpayBtn);
+    expect(onUnpay).toHaveBeenCalledWith(3);
+  });
+
+  it('shows approve button for rejected items when expanded', async () => {
+    const onApprove = vi.fn();
+    const booking = {
+      timestamp: '2026-05-01T10:00:00Z',
+      choreId: 'siivous',
+      description: 'Siivous',
+      value: 2,
+      status: 'rejected',
+      userName: 'Matti',
+      rowIndex: 3,
+      approvedBy: 'Pomo',
+      approvedAt: '2026-05-02T12:00:00Z',
+    };
+    const { rerender } = render(<HistoryItem booking={booking} onApprove={onApprove} />);
+
+    const row = screen.getByText('Siivous').closest('[role="button"]');
+    await userEvent.click(row);
+
+    rerender(<HistoryItem booking={booking} onApprove={onApprove} isExpanded={true} />);
+
+    const approveBtn = screen.getByText('✅ Hyväksy');
+    await userEvent.click(approveBtn);
+    expect(onApprove).toHaveBeenCalledWith(3);
+  });
+
   it('shows approver info when expanded', async () => {
     const booking = {
       timestamp: '2026-05-01T10:00:00Z',
