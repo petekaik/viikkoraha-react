@@ -176,7 +176,10 @@ async function staleWhileRevalidate(request, cacheName) {
   const fetchPromise = fetch(request, { cache: 'no-cache' })
     .then((response) => {
       if (response.ok) {
-        caches.open(cacheName).then((cache) => cache.put(request, response.clone()));
+        // Clone HETI ennen asynkronista caches.open() — muuten selain ehtii
+        // lukea bodya return response -kohdassa ennen kuin tämä callback ajetaan.
+        const clone = response.clone();
+        caches.open(cacheName).then((cache) => cache.put(request, clone));
       }
       return response;
     })
