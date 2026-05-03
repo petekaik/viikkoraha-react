@@ -6,6 +6,8 @@ import {
   loadSettingsFromSheet,
   saveSettingsToSheet,
 } from '../utils/settingsSync';
+import { getDisplayName } from '../utils/displayName';
+import { USERS_RANGE, ROLES } from '../utils/sheets-schema';
 
 let gisLoaded = false;
 let gapiLoaded = false;
@@ -78,7 +80,6 @@ async function initGapiClient(apiKey, token) {
               apiKey,
               discoveryDocs: [
                 'https://sheets.googleapis.com/$discovery/rest?version=v4',
-                'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
               ],
             });
             gapiInitialized = true;
@@ -105,7 +106,37 @@ async function initGapiClient(apiKey, token) {
 }
 
 function isGapiReady() {
-  return gapiInitialized && !!window.gapi?.client?.sheets && !!window.gapi?.client?.drive;
+  // Drive API käyttää suoraa fetch(), ei tarvita gapi.client.drive -clienttiä
+  return gapiInitialized && !!window.gapi?.client?.sheets;
+}
+
+// ── Role resolution ──
+
+/**
+ * Look up the current user's role from the Users sheet (by email).
+ * If the user is not found, defaults to CHILD.
+ */
+async function resolveUserRole(spreadsheetId, email) {
+  // If we don't have an email yet (token lacks email scope), don't
+  // set a default role — let the user see the promote button in settings.
+  if (!email || !spreadsheetId) return;
+  try {
+    const res = await window.gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: USERS_RANGE,
+    });
+    const rows = res.result.values || [];
+    const userRow = rows.find(
+      (r) => r[0] && r[0].trim().toLowerCase() === email.trim().toLowerCase()
+    );
+    if (userRow) {
+      const role = userRow[2] === ROLES.PARENT ? ROLES.PARENT : ROLES.CHILD;
+      useAuthStore.getState().setRole(role);
+    }
+    // If users sheet exists but user not found → role stays null (new user)
+  } catch {
+    // Sheet doesn't exist yet — leave role null
+  }
 }
 
 // ── useGoogleAuth hook ──
@@ -155,9 +186,28 @@ export function useGoogleAuth() {
           await initGapiClient(useSettingsStore.getState().apiKey, authState.accessToken);
           if (!cancelled) setGapiReady(true);
 
+          // Always fetch fresh userinfo on restore — ensures name/picture
+          // are up to date even after scope changes (e.g. adding openid).
+          try {
+            const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+              headers: { Authorization: `Bearer ${authState.accessToken}` },
+            });
+            if (userRes.ok) {
+              const profile = await userRes.json();
+              useAuthStore.getState().setUser({
+                name: getDisplayName(profile),
+                email: profile.email || '',
+                imageUrl: profile.picture || '',
+              });
+            }
+          } catch (e) {
+            console.warn('[viikkoraha] Userinfo fetch on restore failed:', e.message);
+          }
+
           // Auto-load settings from sheet on restore
           if (sid) {
             try {
+              await resolveUserRole(sid, useAuthStore.getState().user?.email);
               await loadSettingsFromSheet(sid);
             } catch (e) {
               console.warn('[viikkoraha] Settings load on restore failed:', e.message);
@@ -193,7 +243,7 @@ export function useGoogleAuth() {
     setError(null);
     const tokenClient = window.google.accounts.oauth2.initTokenClient({
       client_id: clientId,
-      scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly',
+      scope: 'profile email https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly',
       callback: async (tokenResponse) => {
         if (tokenResponse.error) {
           setError(tokenResponse.error_description || tokenResponse.error);
@@ -210,7 +260,7 @@ export function useGoogleAuth() {
           if (res.ok) {
             const profile = await res.json();
             setUser({
-              name: profile.name || 'Käyttäjä',
+              name: getDisplayName(profile),
               email: profile.email || '',
               imageUrl: profile.picture || '',
             });
@@ -225,14 +275,15 @@ export function useGoogleAuth() {
           await initGapiClient(apiKey, token);
           setGapiReady(true);
 
-          // Auto-load settings from sheet after login
+          // Resolve user role + settings from sheet after login
           const sid = useSettingsStore.getState().spreadsheetId;
           if (sid) {
             try {
+              await resolveUserRole(sid, useAuthStore.getState().user?.email);
               await ensureSettingsSheet(sid);
               await loadSettingsFromSheet(sid);
             } catch (e) {
-              console.warn('[viikkoraha] Settings load on login failed:', e.message);
+              console.warn('[viikkoraha] Settings/role load on login failed:', e.message);
             }
           }
         } catch (e) {
@@ -242,6 +293,9 @@ export function useGoogleAuth() {
       },
     });
 
+    // prompt: 'consent' vaaditaan incremental authiin — Google näyttää consent-näkymän
+    // jossa KAIKKI pyydetyt scopet (vanhat + uudet) näkyvät. Ilman tätä uusia scopeja
+    // (esim. drive.readonly) ei koskaan lisätä tokeniin.
     tokenClient.requestAccessToken({ prompt: 'consent' });
   }, [clientId, apiKey]);
 

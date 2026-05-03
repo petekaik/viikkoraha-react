@@ -35,7 +35,7 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
 
   // ── Load spreadsheets when signed in AND GAPI is ready ──
   const load = useCallback(async () => {
-    if (!isSignedIn || !gapiReady || !window.gapi?.client?.drive) return;
+    if (!isSignedIn || !gapiReady) return;
     setLoading(true);
     setError(null);
     try {
@@ -140,7 +140,7 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
           </p>
         </div>
       ) : (
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <select
             value={selected}
             onChange={handleSelect}
@@ -162,7 +162,7 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
           <button
             onClick={handleCreate}
             disabled={creating}
-            className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-white text-sm font-medium transition-colors shrink-0"
+            className="sm:w-auto w-full px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-white text-sm font-medium transition-colors shrink-0"
           >
             {creating ? 'Luodaan...' : 'Luo uusi'}
           </button>

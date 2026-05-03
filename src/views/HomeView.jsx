@@ -12,6 +12,7 @@ import NotificationBar from '../components/NotificationBar';
 
 export default function HomeView() {
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
+  const user = useAuthStore((s) => s.user);
   const { login, isLoading: authLoading, error: authError, gapiReady } = useGoogleAuth();
   const { getChores, appendBooking, isLoading: sheetsLoading, error: sheetsError, clearError } =
     useGoogleSheets();
@@ -63,6 +64,10 @@ export default function HomeView() {
   }
 
   // ── State machine ──
+  // No spinner needed — Zustand persist with synchronous localStorage
+  // reads the stored auth state during create(), before React renders.
+  // The store is fully initialized immediately.
+
   if (!isSignedIn) {
     return <LoginPrompt onLogin={login} isLoading={authLoading} error={authError} />;
   }
@@ -111,6 +116,7 @@ export default function HomeView() {
       {selectedChore && (
         <ConfirmDialog
           chore={selectedChore}
+          user={user}
           onConfirm={handleConfirm}
           onCancel={handleCancel}
         />

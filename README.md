@@ -110,6 +110,8 @@ npm test               # Vitest (kertasuoritus)
 npm run test:watch     # Watch-moodi
 ```
 
+**E2E-testit oikealla iPhonella:** Katso [docs/TESTING.md](docs/TESTING.md)
+
 ### Tuotantobuild
 
 ```bash
@@ -147,6 +149,16 @@ viikkoraha/
 ├── package.json            # Riippuvuudet ja skriptit
 ├── .env.example            # Pohja ympäristömuuttujille
 ├── .gitignore
+├── docs/                   # Dokumentaatio
+│   ├── BACKLOG.md          # Kehitysjonossa olevat tehtävät
+│   ├── CHANGELOG.md        # Julkaisut ja muutosloki
+│   ├── KNOWN_BUGS.md       # Tunnetut bugit ja workaroundit
+│   └── TESTING.md          # Testausohjeet (yksikkö- ja E2E)
+├── tests/                  # E2E-testit
+│   └── e2e/
+│       ├── full_e2e.py     # iOS Safari WebDriver -skripti
+│       ├── .env.e2e        # Paikalliset secretit (gitignored)
+│       └── .env.e2e.example
 ├── public/                 # Staattiset assetit
 │   ├── sw.js               # Service Worker (PWA)
 │   ├── site.webmanifest    # PWA-manifesti
@@ -164,23 +176,32 @@ viikkoraha/
     │   ├── NotificationBar.jsx
     │   ├── LoginPrompt.jsx
     │   ├── SettingsPanel.jsx
+    │   ├── SpreadsheetPicker.jsx
     │   ├── DashboardSummary.jsx
     │   ├── HistoryList.jsx
-    │   └── HistoryItem.jsx
+    │   ├── HistoryItem.jsx
+    │   └── WeeklyChart.jsx  # Viikkograafi
     ├── views/              # Sivunäkymät
     │   ├── HomeView.jsx    # Päänäkymä
     │   ├── DashboardView.jsx
+    │   ├── ChoreManagerView.jsx  # Askareiden hallinta (parent)
+    │   ├── UsersManagerView.jsx  # Perheenjäsenten hallinta (parent)
     │   └── SettingsView.jsx
     ├── stores/             # Zustand-tilat
-    │   ├── authStore.js    # Autentikointitila (token + user)
+    │   ├── authStore.js    # Autentikointitila (token + user + rooli)
     │   ├── choresStore.js  # Askareiden tila
     │   └── settingsStore.js # Asetustila (Client ID, API key yms.)
     ├── hooks/              # Mukautetut hookit
     │   ├── useGoogleAuth.js
-    │   └── useGoogleSheets.js
+    │   ├── useGoogleSheets.js
+    │   └── useUsers.js     # Käyttäjähallinta (Users-sheet)
     ├── utils/
     │   ├── sheets-schema.js # Sheets-välilehtimäärittelyt ja oletusdata
-    │   └── validation.js
+    │   ├── validation.js
+    │   ├── displayName.js  # Google-profiilin nimen käsittely
+    │   ├── parseNumber.js  # Suomi-lokaalin numerojäsennys
+    │   ├── settingsSync.js # Settings-sheetin synkronointi
+    │   └── AppContext.js
     └── __tests__/          # Yksikkö- ja komponenttitestit
 ```
 

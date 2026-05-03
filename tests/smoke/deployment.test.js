@@ -32,6 +32,7 @@ describe('Deployment smoke', () => {
     const res = await fetch(BASE);
     const html = await res.text();
     expect(html).toContain('apple-mobile-web-app-capable');
+    expect(html).toContain('mobile-web-app-capable');
     expect(html).toContain('theme-color');
   });
 

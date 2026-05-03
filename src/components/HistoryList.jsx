@@ -1,14 +1,10 @@
+import { useState } from 'react';
 import HistoryItem from './HistoryItem';
+import { getISOWeek } from '../utils/dateUtils';
 
-function getWeekNumber(dateStr) {
-  if (!dateStr) return 0;
-  const d = new Date(dateStr);
-  const startOfYear = new Date(d.getFullYear(), 0, 1);
-  const diff = (d - startOfYear) / 86400000;
-  return Math.ceil((diff + startOfYear.getDay() + 1) / 7);
-}
+export default function HistoryList({ bookings, onApprove, onReject, onUnpay, userName }) {
+  const [expandedItem, setExpandedItem] = useState(null);
 
-export default function HistoryList({ bookings, onApprove, userName }) {
   if (!bookings || bookings.length === 0) {
     return (
       <div className="text-center text-gray-500 py-12">
@@ -18,22 +14,50 @@ export default function HistoryList({ bookings, onApprove, userName }) {
     );
   }
 
+  // IMPORTANT: Always derive week from timestamp, never from sheet's weekNumber column.
+  // The sheet column may be stale or manually edited — timestamp is the source of truth.
   const weeks = new Map();
   for (const b of bookings) {
-    const wk = getWeekNumber(b.timestamp);
+    const wk = b.timestamp ? getISOWeek(new Date(b.timestamp)) : '?';
     if (!weeks.has(wk)) weeks.set(wk, []);
     weeks.get(wk).push(b);
   }
 
+  // Sort items within each week by timestamp descending (newest first)
+  for (const items of weeks.values()) {
+    items.sort((a, b) => {
+      const ta = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+      const tb = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+      return tb - ta;
+    });
+  }
+
+  // Sort weeks descending (newest week first)
+  const sortedWeeks = [...weeks.entries()].sort(([a], [b]) => {
+    const na = parseInt(a, 10), nb = parseInt(b, 10);
+    if (!isNaN(na) && !isNaN(nb)) return nb - na;
+    return String(b).localeCompare(String(a));
+  });
+
   return (
     <div className="mt-4">
-      {[...weeks.entries()].map(([week, items]) => (
+      {sortedWeeks.map(([week, items]) => (
         <div key={week} className="mb-2">
           <p className="text-xs text-gray-500 uppercase tracking-wide mt-3 mb-1 font-semibold">
             Viikko {week}
           </p>
           {items.map((b, i) => (
-            <HistoryItem key={`${b.rowIndex}-${i}`} booking={b} onApprove={onApprove} />
+            <HistoryItem
+              key={`${b.rowIndex}-${i}`}
+              booking={b}
+              onApprove={onApprove}
+              onReject={onReject}
+              onUnpay={onUnpay}
+              onToggleExpand={(rowIndex) =>
+                setExpandedItem(expandedItem === rowIndex ? null : rowIndex)
+              }
+              isExpanded={expandedItem === b.rowIndex}
+            />
           ))}
         </div>
       ))}

@@ -2,23 +2,37 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 /**
- * Robust localStorage wrapper — same pattern as settingsStore.
+ * Custom storage that serializes/deserializes JSON manually.
+ * Zustand's persist middleware calls setItem(state) with a raw object -
+ * the storage adapter MUST JSON.stringify it itself. If you just pass
+ * through to localStorage without serializing, you get "[object Object]".
  */
-function safeGet(key) {
-  try { return localStorage.getItem(key); } catch (e) {
-    console.error('[viikkoraha] localStorage.getItem failed:', e); return null;
-  }
-}
-function safeSet(key, value) {
-  try { localStorage.setItem(key, value); } catch (e) {
-    console.error('[viikkoraha] localStorage.setItem failed:', e);
-  }
-}
-function safeRemove(key) {
-  try { localStorage.removeItem(key); } catch (e) {
-    console.error('[viikkoraha] localStorage.removeItem failed:', e);
-  }
-}
+const storage = {
+  getItem: (name) => {
+    try {
+      const raw = localStorage.getItem(name);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      console.warn('[viikkoraha] authStore getItem failed:', e.message);
+      localStorage.removeItem(name); // siivoa korruptoitunut data
+      return null;
+    }
+  },
+  setItem: (name, value) => {
+    try {
+      localStorage.setItem(name, JSON.stringify(value));
+    } catch (e) {
+      console.warn('[viikkoraha] authStore setItem failed:', e.message);
+    }
+  },
+  removeItem: (name) => {
+    try {
+      localStorage.removeItem(name);
+    } catch (e) {
+      console.warn('[viikkoraha] authStore removeItem failed:', e.message);
+    }
+  },
+};
 
 export const useAuthStore = create(
   persist(
@@ -26,36 +40,23 @@ export const useAuthStore = create(
       accessToken: null,
       user: null,
       isSignedIn: false,
-      _hydrated: false,
+      role: null,
 
       setToken: (token) => set({ accessToken: token, isSignedIn: Boolean(token) }),
-
       setUser: (user) => set({ user }),
-
       setSignedIn: (val) => set({ isSignedIn: val }),
-
-      signOut: () => {
-        set({ accessToken: null, user: null, isSignedIn: false });
-      },
-
-      setHydrated: () => set({ _hydrated: true }),
+      setRole: (role) => set({ role }),
+      signOut: () => set({ accessToken: null, user: null, isSignedIn: false, role: null }),
     }),
     {
       name: 'viikkoraha-auth',
-      storage: { getItem: safeGet, setItem: safeSet, removeItem: safeRemove },
-      // Don't persist _hydrated — it's runtime-only
+      storage,
       partialize: (state) => ({
         accessToken: state.accessToken,
         user: state.user,
         isSignedIn: state.isSignedIn,
+        role: state.role,
       }),
-      onRehydrateStorage: () => (state, error) => {
-        if (error) {
-          console.error('[viikkoraha] Auth rehydration failed:', error);
-        }
-        // Always mark as hydrated
-        state?.setHydrated();
-      },
     },
   ),
 );

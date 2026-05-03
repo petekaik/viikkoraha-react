@@ -2,9 +2,11 @@ import { useCallback, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import {
-  CHORES_RANGE, BOOKINGS_RANGE, SUMS_RANGE, SETTINGS_RANGE, DEFAULT_CHORES
+  CHORES_RANGE, BOOKINGS_RANGE, SUMS_RANGE, SETTINGS_RANGE, DEFAULT_CHORES,
+  USERS_HEADERS,
 } from '../utils/sheets-schema';
 import { isGapiReady } from './useGoogleAuth';
+import { parseFinnishNumber } from '../utils/parseNumber';
 
 import { getISOWeek } from '../utils/dateUtils';
 
@@ -114,22 +116,37 @@ export function useGoogleSheets() {
     }),
   [call]);
 
-  /** List user's spreadsheets via Drive API REST (name + id).
-   *  Direct fetch avoids GAPI discovery doc dependency issues. */
+  /** List user's spreadsheets via Drive REST API (name + id). */
   const listSpreadsheets = useCallback(() =>
     call(async () => {
       const token = window.gapi.client.getToken();
-      const params = new URLSearchParams({
-        q: "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
-        orderBy: 'modifiedTime desc',
-        pageSize: '50',
-        fields: 'files(id,name,modifiedTime)',
-      });
       const res = await fetch(
-        `https://www.googleapis.com/drive/v3/files?${params}`,
+        'https://www.googleapis.com/drive/v3/files?' + new URLSearchParams({
+          q: "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
+          orderBy: 'modifiedTime desc',
+          pageSize: '50',
+          fields: 'files(id,name,modifiedTime)',
+        }),
         { headers: { Authorization: `Bearer ${token.access_token}` } },
       );
-      if (!res.ok) throw new Error(`Drive API: ${res.status}`);
+      if (!res.ok) {
+        const body = await res.text();
+        let detail = `${res.status}`;
+        try {
+          const parsed = JSON.parse(body);
+          if (parsed?.error?.message) detail += `: ${parsed.error.message}`;
+          // 403 "Drive API has not been used in project" → anna selkeä ohje
+          if (parsed?.error?.message?.includes('has not been used')) {
+            detail += ' — Aktivoi Drive API Google Cloud Consolessa: https://console.cloud.google.com/apis/library/drive.googleapis.com';
+          }
+        } catch { /* body ei ole JSON */ }
+        if (res.status === 403 && detail.includes('has not been used')) {
+          throw new Error(`Drive API ${detail}`);
+        }
+        throw new Error(
+          `Drive API HTTP ${res.status} — tarkista ett\u00e4 Google-kirjautumisessa on hyv\u00e4ksytty Drive-lukuoikeus. Kirjaudu tarvittaessa ulos ja takaisin sis\u00e4\u00e4n. (${detail})`
+        );
+      }
       const data = await res.json();
       return (data.files || []).map(f => ({
         id: f.id,
@@ -160,11 +177,60 @@ export function useGoogleSheets() {
         spreadsheetId, range: CHORES_RANGE,
       });
       const rows = res.result.values || [];
-      return rows.map(([id, description, value, displayName]) => ({
+      return rows.map(([id, description, value, displayName], i) => ({
         id, description: description || id,
-        value: parseFloat(value) || 0,
+        value: parseFinnishNumber(value),
         displayName: displayName || id,
+        rowIndex: i,
       }));
+    }),
+  [spreadsheetId, call]);
+
+  // ── Chore CRUD (parent-only) ──
+
+  const addChore = useCallback((id, description, value, displayName) =>
+    call(async () => {
+      await window.gapi.client.sheets.spreadsheets.values.append(
+        { spreadsheetId, range: 'Chores!A2:D', valueInputOption: 'USER_ENTERED', insertDataOption: 'INSERT_ROWS' },
+        { values: [[id, description, value, displayName]] },
+      );
+    }),
+  [spreadsheetId, call]);
+
+  const updateChore = useCallback((rowIndex, id, description, value, displayName) =>
+    call(async () => {
+      const sheetRow = rowIndex + 2;
+      await window.gapi.client.sheets.spreadsheets.values.update(
+        { spreadsheetId, range: `Chores!A${sheetRow}:D${sheetRow}`, valueInputOption: 'USER_ENTERED' },
+        { values: [[id, description, value, displayName]] },
+      );
+    }),
+  [spreadsheetId, call]);
+
+  const deleteChore = useCallback((rowIndex) =>
+    call(async () => {
+      const sheetRow = rowIndex + 2;
+      // Get actual sheetId for Chores tab
+      const meta = await window.gapi.client.sheets.spreadsheets.get({ spreadsheetId });
+      const sheet = (meta.result.sheets || []).find(
+        (s) => s.properties.title.toLowerCase() === 'chores',
+      );
+      if (!sheet) throw new Error('Chores-sivu puuttuu');
+      await window.gapi.client.sheets.spreadsheets.batchUpdate(
+        { spreadsheetId },
+        {
+          requests: [{
+            deleteDimension: {
+              range: {
+                sheetId: sheet.properties.sheetId,
+                dimension: 'ROWS',
+                startIndex: sheetRow - 1,
+                endIndex: sheetRow,
+              },
+            },
+          }],
+        },
+      );
     }),
   [spreadsheetId, call]);
 
@@ -178,10 +244,13 @@ export function useGoogleSheets() {
         timestamp: row[0],
         choreId: row[1],
         description: row[2] || row[1],
-        value: parseFloat(row[3]) || 0,
+        value: parseFinnishNumber(row[3]),
         weekNumber: row[4],
         userName: row[5] || '',
         status: row[6] || 'pending',
+        approvedBy: row[7] || '',
+        approvedAt: row[8] || '',
+        userEmail: row[9] || '',
         rowIndex: i,
       })).reverse();
     }),
@@ -190,45 +259,54 @@ export function useGoogleSheets() {
   const appendBooking = useCallback((choreId, description, value) =>
     call(async () => {
       const userName = user?.name || 'Tuntematon';
+      const userEmail = user?.email || '';
       const weekNumber = getISOWeek();
       await window.gapi.client.sheets.spreadsheets.values.append(
         {
-          spreadsheetId, range: 'Bookings!A2:G',
+          spreadsheetId, range: 'Bookings!A2:J',
           valueInputOption: 'USER_ENTERED', insertDataOption: 'INSERT_ROWS',
         },
         {
           values: [[
             new Date().toISOString(), choreId, description, value,
-            weekNumber, userName, 'pending',
+            weekNumber, userName, 'pending', '', '', userEmail,
           ]],
         },
       );
     }),
   [spreadsheetId, user, call]);
 
-  const updateStatus = useCallback((rowIndex, paidBy) =>
+  const updateStatus = useCallback((rowIndex, newStatus, approvedBy) =>
     call(async () => {
       const sheetRow = rowIndex + 2;
+      const now = new Date().toISOString();
       await window.gapi.client.sheets.spreadsheets.values.update(
         {
-          spreadsheetId, range: `Bookings!G${sheetRow}:H${sheetRow}`,
+          spreadsheetId, range: `Bookings!G${sheetRow}:I${sheetRow}`,
           valueInputOption: 'USER_ENTERED',
         },
-        { values: [['paid', paidBy]] },
+        { values: [[newStatus, approvedBy || '', now]] },
       );
     }),
   [spreadsheetId, call]);
 
   const getSummary = useCallback(() =>
     call(async () => {
+      // Compute sums directly from Bookings data — independent of Sums-sheet formula order
       const res = await window.gapi.client.sheets.spreadsheets.values.get({
-        spreadsheetId, range: SUMS_RANGE,
+        spreadsheetId, range: BOOKINGS_RANGE,
       });
       const rows = res.result.values || [];
-      return {
-        pending: parseFloat(rows[0]?.[1]) || 0,
-        totalPaid: parseFloat(rows[1]?.[1]) || 0,
-      };
+      let pending = 0;
+      let totalPaid = 0;
+      for (const row of rows) {
+        const status = (row[6] || '').toLowerCase().trim();
+        const val = parseFinnishNumber(row[3]);
+        if (status === 'paid') totalPaid += val;
+        else if (status === 'pending') pending += val;
+        // 'rejected' rows are ignored — no money owed
+      }
+      return { pending, totalPaid };
     }),
   [spreadsheetId, call]);
 
@@ -261,8 +339,8 @@ export function useGoogleSheets() {
           { requests: [{ addSheet: { properties: { title: 'Bookings' } } }] },
         );
         await window.gapi.client.sheets.spreadsheets.values.update(
-          { spreadsheetId: sid, range: 'Bookings!A1:G', valueInputOption: 'USER_ENTERED' },
-          { values: [['Timestamp', 'ChoreID', 'Description', 'Value', 'WeekNumber', 'UserName', 'Status']] },
+          { spreadsheetId: sid, range: 'Bookings!A1:J', valueInputOption: 'USER_ENTERED' },
+          { values: [['Timestamp', 'ChoreID', 'Description', 'Value', 'WeekNumber', 'UserName', 'Status', 'ApprovedBy', 'ApprovedAt', 'UserEmail']] },
         );
         created.push('Bookings');
       }
@@ -276,8 +354,8 @@ export function useGoogleSheets() {
           { spreadsheetId: sid, range: 'Sums!A1:B', valueInputOption: 'USER_ENTERED' },
           {
             values: [
-              ['Pending', '=SUMIF(Bookings!G2:G; "pending"; Bookings!D2:D)'],
-              ['Paid', '=SUMIF(Bookings!G2:G; "paid"; Bookings!D2:D)'],
+              ['Pending', '=SUMIF(Bookings!G:G; "pending"; Bookings!D:D)'],
+              ['Paid', '=SUMIF(Bookings!G:G; "paid"; Bookings!D:D)'],
             ],
           },
         );
@@ -288,8 +366,20 @@ export function useGoogleSheets() {
       if (!existingSheets.includes('settings')) {
         await ensureSettingsSheet();
         created.push('Settings');
-        // Save initial settings to the newly created sheet
         await saveSettings();
+      }
+
+      // Also ensure Users sheet exists
+      if (!existingSheets.includes('users')) {
+        await window.gapi.client.sheets.spreadsheets.batchUpdate(
+          { spreadsheetId: sid },
+          { requests: [{ addSheet: { properties: { title: 'Users' } } }] },
+        );
+        await window.gapi.client.sheets.spreadsheets.values.update(
+          { spreadsheetId: sid, range: 'Users!A1:C1', valueInputOption: 'USER_ENTERED' },
+          { values: [USERS_HEADERS] },
+        );
+        created.push('Users');
       }
 
       return { created };
@@ -316,6 +406,7 @@ export function useGoogleSheets() {
         { addSheet: { properties: { title: 'Bookings' } } },
         { addSheet: { properties: { title: 'Sums' } } },
         { addSheet: { properties: { title: 'Settings' } } },
+        { addSheet: { properties: { title: 'Users' } } },
       );
 
       if (requests.length > 0) {
@@ -334,8 +425,8 @@ export function useGoogleSheets() {
 
       // Populate Bookings
       await window.gapi.client.sheets.spreadsheets.values.update(
-        { spreadsheetId: newId, range: 'Bookings!A1:G', valueInputOption: 'USER_ENTERED' },
-        { values: [['Timestamp', 'ChoreID', 'Description', 'Value', 'WeekNumber', 'UserName', 'Status']] },
+        { spreadsheetId: newId, range: 'Bookings!A1:J', valueInputOption: 'USER_ENTERED' },
+        { values: [['Timestamp', 'ChoreID', 'Description', 'Value', 'WeekNumber', 'UserName', 'Status', 'ApprovedBy', 'ApprovedAt', 'UserEmail']] },
       );
 
       // Sums
@@ -343,8 +434,8 @@ export function useGoogleSheets() {
         { spreadsheetId: newId, range: 'Sums!A1:B', valueInputOption: 'USER_ENTERED' },
         {
           values: [
-            ['Pending', '=SUMIF(Bookings!G2:G; "pending"; Bookings!D2:D)'],
-            ['Paid', '=SUMIF(Bookings!G2:G; "paid"; Bookings!D2:D)'],
+            ['Pending', '=SUMIF(Bookings!G:G; "pending"; Bookings!D:D)'],
+            ['Paid', '=SUMIF(Bookings!G:G; "paid"; Bookings!D:D)'],
           ],
         },
       );
@@ -363,12 +454,19 @@ export function useGoogleSheets() {
         { values: settingRows },
       );
 
+      // Users header
+      await window.gapi.client.sheets.spreadsheets.values.update(
+        { spreadsheetId: newId, range: 'Users!A1:C1', valueInputOption: 'USER_ENTERED' },
+        { values: [USERS_HEADERS] },
+      );
+
       return { spreadsheetId: newId, sheetsUrl: `https://docs.google.com/spreadsheets/d/${newId}` };
     }),
   [call]);
 
   return {
     getChores, getBookings, appendBooking, updateStatus, getSummary, initSheets,
+    addChore, updateChore, deleteChore,
     createNewSpreadsheet, clearError,
     loadSettings, saveSettings, ensureSettingsSheet,
     listSpreadsheets, validateSpreadsheet,

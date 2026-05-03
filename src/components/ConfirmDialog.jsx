@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
-export default function ConfirmDialog({ chore, onConfirm, onCancel }) {
+export default function ConfirmDialog({ chore, user, onConfirm, onCancel }) {
   const cancelRef = useRef(null);
 
   useEffect(() => {
@@ -33,9 +33,16 @@ export default function ConfirmDialog({ chore, onConfirm, onCancel }) {
         <h2 className="text-lg font-semibold text-white mb-2">
           {chore.description || chore.displayName || chore.id}
         </h2>
-        <p className="text-amber-400 text-xl font-bold mb-6">
+        <p className="text-amber-400 text-xl font-bold mb-1">
           {chore.value?.toFixed(2)} €
         </p>
+        {user && (
+          <p className="text-gray-400 text-xs mb-4 truncate">
+            {user.name || 'Käyttäjä'}
+            {user.email && <span className="text-gray-500"> · {user.email}</span>}
+          </p>
+        )}
+        {!user && <div className="mb-4" />}
 
         <div className="flex gap-3">
           <button

@@ -1,84 +1,51 @@
 #!/usr/bin/env bash
+# Viikkoraha — Deploy GitHub Pagesiin
 #
-# Viikkoraha Full CI/CD Pipeline
-# ===============================
-# Vaihe 1: Yksikkötestit dev-ympäristössä
-# Vaihe 2: Build + dev-smoke (preview-server)
-# Vaihe 3: Deploy GitHub Pagesiin
-# Vaihe 4: UAT — tuotannon smoke-testit
+# 1. Aja testit
+# 2. Buildaa
+# 3. Pushaa dist/ → gh-pages branch
 #
-# Käyttö:  npm run deploy
+# Käyttö: ./scripts/deploy.sh
 
 set -euo pipefail
+cd "$(dirname "$0")/.."
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
+REMOTE="${DEPLOY_REMOTE:-origin}"
+BRANCH="${DEPLOY_BRANCH:-gh-pages}"
 
-PROJECT_DIR="$HOME/projects/viikkoraha"
-PAGES_DIR="$HOME/projects/petekaik.github.io"
-PREVIEW_PORT=4173
-DEPLOY_URL="https://gitpages.morgeweb.com/viikkoraha"
+echo "═══ 1. TESTIT ═══"
+npm test
 
-echo -e "${YELLOW}══════════════════════════════════════════${NC}"
-echo -e "${YELLOW}  Viikkoraha CI/CD Pipeline${NC}"
-echo -e "${YELLOW}══════════════════════════════════════════${NC}"
-
-# ── Vaihe 1: Yksikkötestit ──
-echo -e "\n${YELLOW}[1/4] Yksikkötestit (dev-ympäristö)...${NC}"
-cd "$PROJECT_DIR"
-npx vitest run --config vitest.dev.config.js
-echo -e "${GREEN}✓ Yksikkötestit OK${NC}"
-
-# ── Vaihe 2: Build + dev-smoke (preview) ──
-echo -e "\n${YELLOW}[2/4] Build + dev-smoke (preview)...${NC}"
-cd "$PROJECT_DIR"
-git checkout master
-git pull origin master
+echo ""
+echo "═══ 2. BUILD ═══"
 npm run build
 
-# Käynnistä preview-server taustalla
-npx vite preview --port $PREVIEW_PORT --host 0.0.0.0 &
-PREVIEW_PID=$!
-echo -e "  Preview-server käynnistetty (PID $PREVIEW_PID)"
+echo ""
+echo "═══ 3. DEPLOY ═══"
 
-# Odota että preview on valmis
-for i in $(seq 1 15); do
-  if curl -s -o /dev/null "http://localhost:$PREVIEW_PORT/viikkoraha/"; then
-    break
-  fi
-  sleep 1
-done
+# Varmista puhdas työhakemisto
+if ! git diff-index --quiet HEAD --; then
+    echo "❌ Työhakemistossa on commitoimattomia muutoksia. Committaa tai stashaa."
+    exit 1
+fi
 
-npx vitest run --config vitest.dev-smoke.config.js
-echo -e "${GREEN}✓ Dev-smoke OK${NC}"
+CURRENT_BRANCH=$(git symbolic-ref --short HEAD)
+COMMIT_MSG="deploy: $(date -u +'%Y-%m-%d %H:%M UTC') — $(git rev-parse --short HEAD)"
 
-kill "$PREVIEW_PID" 2>/dev/null || true
-
-# ── Vaihe 3: Deploy ──
-echo -e "\n${YELLOW}[3/4] Deploy GitHub Pagesiin...${NC}"
-
-rm -rf "$PAGES_DIR/viikkoraha/"*
-cp -R dist/* "$PAGES_DIR/viikkoraha/"
-
-cd "$PAGES_DIR"
+# Rakenna gh-pages commit dist/-kansiosta orphan-branchilla
+TMP_BRANCH="gh-pages-deploy-$$"
+git checkout --orphan "$TMP_BRANCH"
+git rm -rf --quiet . 2>/dev/null || true
+cp -r dist/* .
 git add -A
-git commit -m "Deploy Viikkoraha: $(date '+%Y-%m-%d %H:%M')" || echo "  (ei uusia muutoksia)"
-git push origin master
-echo -e "${GREEN}✓ Deploy valmis${NC}"
+git commit -m "$COMMIT_MSG"
 
-# ── Vaihe 4: UAT ──
-echo -e "\n${YELLOW}[4/4] UAT — tuotannon smoke-testit...${NC}"
-echo -e "  Odotetaan GitHub Pagesin päivittymistä (10s)..."
-sleep 10
+echo "  Push $REMOTE/$BRANCH..."
+git push "$REMOTE" "$TMP_BRANCH:$BRANCH" --force
 
-cd "$PROJECT_DIR"
-npx vitest run --config vitest.smoke.config.js
-echo -e "${GREEN}✓ UAT OK${NC}"
+# Palaa ja siivoa
+git checkout "$CURRENT_BRANCH"
+git branch -D "$TMP_BRANCH"
 
-# ── Valmis ──
-echo -e "\n${GREEN}══════════════════════════════════════════${NC}"
-echo -e "${GREEN}  ✅ Kaikki vaiheet onnistuneesti läpi${NC}"
-echo -e "${GREEN}  🔗 $DEPLOY_URL${NC}"
-echo -e "${GREEN}══════════════════════════════════════════${NC}"
+echo ""
+echo "✅ Deploy valmis: https://gitpages.morgeweb.com/viikkoraha/"

@@ -26,34 +26,42 @@ const bookings = [
 
 describe('HistoryList', () => {
   it('renders empty state', () => {
-    render(<HistoryList bookings={[]} onApprove={vi.fn()} />);
+    render(<HistoryList bookings={[]} />);
     expect(screen.getByText('Ei tehtävähistoriaa')).toBeInTheDocument();
   });
 
   it('renders week headers', () => {
-    render(<HistoryList bookings={bookings} onApprove={vi.fn()} />);
+    render(<HistoryList bookings={bookings} />);
     const weekHeaders = screen.getAllByText((content) => content.startsWith('Viikko '));
     expect(weekHeaders.length).toBeGreaterThan(0);
   });
 
   it('renders all items', () => {
-    render(<HistoryList bookings={bookings} onApprove={vi.fn()} />);
+    render(<HistoryList bookings={bookings} />);
     expect(screen.getByText('Siivous')).toBeInTheDocument();
     expect(screen.getByText('Tiskaus')).toBeInTheDocument();
   });
 
-  it('calls onApprove on pending click', async () => {
+  it('expands item on click and shows approve button', async () => {
     const onApprove = vi.fn();
-    render(<HistoryList bookings={bookings} onApprove={onApprove} />);
-    // Find the clickable odottaa row
-    const approveBtn = screen.getByText('odottaa').closest('[role="button"]');
+    render(
+      <HistoryList bookings={bookings} onApprove={onApprove} onReject={vi.fn()} onUnpay={vi.fn()} />
+    );
+
+    // Click the pending item to expand
+    const pendingRow = screen.getByText('Tiskaus').closest('[role="button"]');
+    await userEvent.click(pendingRow);
+
+    // Approve button should be visible
+    const approveBtn = screen.getByText('✅ Hyväksy');
     expect(approveBtn).toBeTruthy();
+
     await userEvent.click(approveBtn);
     expect(onApprove).toHaveBeenCalledWith(1);
   });
 
   it('renders both status badges', () => {
-    render(<HistoryList bookings={bookings} onApprove={vi.fn()} />);
+    render(<HistoryList bookings={bookings} />);
     expect(screen.getByText('odottaa')).toBeInTheDocument();
     expect(screen.getByText('maksettu')).toBeInTheDocument();
   });

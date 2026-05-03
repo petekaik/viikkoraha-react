@@ -20,8 +20,12 @@ dist/
 .env
 .env.local
 .env.*.local
+.env.e2e
 
 # Logs
 *.log
 npm-debug.log*
 .env.test
+
+# E2E test output
+tests/e2e/__pycache__/

@@ -19,7 +19,7 @@ export default function OnboardingGuide() {
         <ol className="text-left text-sm text-gray-300 space-y-3 mb-6">
           <li className="flex gap-3">
             <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-700 text-white text-xs flex items-center justify-center font-bold">1</span>
-            <span>Avaa <strong>Asetukset</strong> oikean yläkulman hammasratas-kuvakkeesta</span>
+            <span>Avaa <strong>Asetukset</strong> vasemman yläkulman hammasratas-kuvakkeesta</span>
           </li>
           <li className="flex gap-3">
             <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-700 text-white text-xs flex items-center justify-center font-bold">2</span>

@@ -1,7 +1,8 @@
 export const CHORES_RANGE = 'Chores!A2:D';
-export const BOOKINGS_RANGE = 'Bookings!A2:G';
+export const BOOKINGS_RANGE = 'Bookings!A2:J';
 export const SUMS_RANGE = 'Sums!A2:B';
 export const SETTINGS_RANGE = 'Settings!A2:B';
+export const USERS_RANGE = 'Users!A2:C';
 export const DEFAULT_SPREADSHEET_ID = '';
 
 export const CHORE_ICONS = {
@@ -70,5 +71,10 @@ export const BOOKINGS_HEADERS = [
   'WeekNumber',
   'UserName',
   'Status',
+  'ApprovedBy',
+  'ApprovedAt',
+  'UserEmail',
 ];
 export const SUMS_HEADERS = ['Type', 'Amount'];
+export const USERS_HEADERS = ['Email', 'Name', 'Role'];
+export const ROLES = { PARENT: 'parent', CHILD: 'child' };
