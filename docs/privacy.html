@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy – Viikkoraha</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5; color: #1a1a1a; line-height: 1.6;
+      max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem;
+    }
+    h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+    .lang-tabs {
+      display: flex; gap: 0.5rem; margin: 1.5rem 0 2rem;
+      border-bottom: 2px solid #e0e0e0;
+    }
+    .lang-tabs button {
+      background: none; border: none; cursor: pointer; font-size: 0.9rem;
+      padding: 0.5rem 1.25rem; border-bottom: 2px solid transparent;
+      margin-bottom: -2px; font-weight: 500; color: #666;
+      transition: color .15s, border-color .15s;
+    }
+    .lang-tabs button:hover { color: #333; }
+    .lang-tabs button.active { color: #1a73e8; border-bottom-color: #1a73e8; }
+    .lang-content { display: none; }
+    .lang-content.active { display: block; }
+    h2 { font-size: 1.2rem; margin: 1.5rem 0 0.5rem; color: #333; }
+    p, ul { margin-bottom: 1rem; }
+    ul { padding-left: 1.5rem; }
+    .updated { color: #888; font-size: 0.85rem; margin-top: 2.5rem; border-top: 1px solid #e0e0e0; padding-top: 1rem; }
+  </style>
+</head>
+<body>
+
+<h1>Privacy Policy · Tietosuojaseloste · Integritetspolicy</h1>
+
+<div class="lang-tabs">
+  <button class="active" onclick="switchLang(event, 'en')">English</button>
+  <button onclick="switchLang(event, 'fi')">Suomi</button>
+  <button onclick="switchLang(event, 'se')">Svenska</button>
+</div>
+
+<!-- ENGLISH -->
+<div class="lang-content active" id="en">
+  <h2>Data Collection</h2>
+  <p>
+    Viikkoraha does <strong>not</strong> collect, store, or transmit any personal data
+    to external servers. All data — including task lists, bookings, user names, and
+    settings — is stored exclusively in the user's own Google Sheets spreadsheets and
+    the user's browser local storage.
+  </p>
+
+  <h2>Google Account Access</h2>
+  <p>
+    The application requests access to your Google account solely for the purpose of
+    reading from and writing to your own Google Sheets spreadsheets. No data is ever
+    sent to third-party servers. The application operates entirely client-side in your
+    browser.
+  </p>
+
+  <h2>Cookies &amp; Tracking</h2>
+  <p>
+    Viikkoraha does not use cookies, analytics, or any form of tracking.
+  </p>
+
+  <h2>Data Retention</h2>
+  <p>
+    All data remains under your complete control in your Google account. Deleting the
+    application's spreadsheet from your Google Drive permanently removes all
+    application data. Local browser storage can be cleared through your browser
+    settings at any time.
+  </p>
+
+  <h2>Third-Party Services</h2>
+  <p>
+    The application uses Google APIs (Sheets API, Drive API) to interact with your
+    spreadsheets. These services are governed by
+    <a href="https://policies.google.com/privacy">Google's Privacy Policy</a>.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    This application is provided as-is without dedicated user support.
+    For privacy-related inquiries, contact the developer via the repository:
+    <a href="https://github.com/petekaik/viikkoraha-react">github.com/petekaik/viikkoraha-react</a>
+  </p>
+</div>
+
+<!-- SUOMI -->
+<div class="lang-content" id="fi">
+  <h2>Tietojen kerääminen</h2>
+  <p>
+    Viikkoraha <strong>ei</strong> kerää, tallenna tai välitä henkilötietoja
+    ulkoisille palvelimille. Kaikki data — mukaan lukien tehtävälistat, kirjaukset,
+    käyttäjänimet ja asetukset — säilytetään yksinomaan käyttäjän omissa Google
+    Sheets -taulukoissa ja selaimen paikallisessa tallennustilassa.
+  </p>
+
+  <h2>Google-tilin käyttöoikeus</h2>
+  <p>
+    Sovellus pyytää pääsyä Google-tiliisi ainoastaan voidakseen lukea ja kirjoittaa
+    omia Google Sheets -taulukoitasi. Mitään tietoja ei koskaan lähetetä
+    kolmannen osapuolen palvelimille. Sovellus toimii kokonaan selaimessasi
+    asiakaspuolen sovelluksena.
+  </p>
+
+  <h2>Evästeet ja seuranta</h2>
+  <p>
+    Viikkoraha ei käytä evästeitä, analytiikkaa eikä minkäänlaista seurantaa.
+  </p>
+
+  <h2>Tietojen säilytys</h2>
+  <p>
+    Kaikki tieto pysyy täysin hallinnassasi Google-tililläsi. Sovelluksen taulukon
+    poistaminen Google Drivesta poistaa pysyvästi kaikki sovelluksen tiedot.
+    Selaimen paikallisen tallennustilan voit tyhjentää selaimen asetuksista milloin
+    tahansa.
+  </p>
+
+  <h2>Kolmannen osapuolen palvelut</h2>
+  <p>
+    Sovellus käyttää Googlen rajapintoja (Sheets API, Drive API) taulukoiden
+    käsittelyyn. Näitä palveluita koskee
+    <a href="https://policies.google.com/privacy">Googlen tietosuojakäytäntö</a>.
+  </p>
+
+  <h2>Yhteydenotto</h2>
+  <p>
+    Sovellus tarjotaan sellaisenaan ilman erillistä käyttäjätukea.
+    Tietosuojaa koskevissa kysymyksissä voit ottaa yhteyttä kehittäjään repositorion
+    kautta:
+    <a href="https://github.com/petekaik/viikkoraha-react">github.com/petekaik/viikkoraha-react</a>
+  </p>
+</div>
+
+<!-- SVENSKA -->
+<div class="lang-content" id="se">
+  <h2>Datainsamling</h2>
+  <p>
+    Viikkoraha <strong>samlar inte</strong> in, lagrar eller överför några
+    personuppgifter till externa servrar. All data — inklusive uppgiftslistor,
+    bokningar, användarnamn och inställningar — lagras uteslutande i användarens
+    egna Google Sheets-kalkylark och webbläsarens lokala lagring.
+  </p>
+
+  <h2>Åtkomst till Google-konto</h2>
+  <p>
+    Applikationen begär åtkomst till ditt Google-konto enbart för att kunna läsa
+    från och skriva till dina egna Google Sheets-kalkylark. Ingen data skickas
+    någonsin till tredjepartsservrar. Applikationen körs helt på klientsidan i din
+    webbläsare.
+  </p>
+
+  <h2>Cookies och spårning</h2>
+  <p>
+    Viikkoraha använder inga cookies, analysverktyg eller någon form av spårning.
+  </p>
+
+  <h2>Datalagring</h2>
+  <p>
+    All data förblir under din fullständiga kontroll i ditt Google-konto. Om du
+    tar bort applikationens kalkylark från Google Drive raderas all applikationsdata
+    permanent. Webbläsarens lokala lagring kan rensas via webbläsarens inställningar
+    när som helst.
+  </p>
+
+  <h2>Tredjepartstjänster</h2>
+  <p>
+    Applikationen använder Googles API:er (Sheets API, Drive API) för att
+    interagera med dina kalkylark. Dessa tjänster omfattas av
+    <a href="https://policies.google.com/privacy">Googles integritetspolicy</a>.
+  </p>
+
+  <h2>Kontakt</h2>
+  <p>
+    Applikationen tillhandahålls i befintligt skick utan särskild användarsupport.
+    För integritetsrelaterade frågor, kontakta utvecklaren via repositoriet:
+    <a href="https://github.com/petekaik/viikkoraha-react">github.com/petekaik/viikkoraha-react</a>
+  </p>
+</div>
+
+<p class="updated">Last updated · Päivitetty · Senast uppdaterad: 2026-05-04</p>
+
+<script>
+  function switchLang(event, lang) {
+    document.querySelectorAll('.lang-tabs button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.lang-content').forEach(c => c.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById(lang).classList.add('active');
+  }
+</script>
+
+</body>
+</html>

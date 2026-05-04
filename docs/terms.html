@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service – Viikkoraha</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5; color: #1a1a1a; line-height: 1.6;
+      max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem;
+    }
+    h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+    .lang-tabs {
+      display: flex; gap: 0.5rem; margin: 1.5rem 0 2rem;
+      border-bottom: 2px solid #e0e0e0;
+    }
+    .lang-tabs button {
+      background: none; border: none; cursor: pointer; font-size: 0.9rem;
+      padding: 0.5rem 1.25rem; border-bottom: 2px solid transparent;
+      margin-bottom: -2px; font-weight: 500; color: #666;
+      transition: color .15s, border-color .15s;
+    }
+    .lang-tabs button:hover { color: #333; }
+    .lang-tabs button.active { color: #1a73e8; border-bottom-color: #1a73e8; }
+    .lang-content { display: none; }
+    .lang-content.active { display: block; }
+    h2 { font-size: 1.2rem; margin: 1.5rem 0 0.5rem; color: #333; }
+    p, ul { margin-bottom: 1rem; }
+    ul { padding-left: 1.5rem; }
+    .updated { color: #888; font-size: 0.85rem; margin-top: 2.5rem; border-top: 1px solid #e0e0e0; padding-top: 1rem; }
+  </style>
+</head>
+<body>
+
+<h1>Terms of Service · Käyttöehdot · Användarvillkor</h1>
+
+<div class="lang-tabs">
+  <button class="active" onclick="switchLang(event, 'en')">English</button>
+  <button onclick="switchLang(event, 'fi')">Suomi</button>
+  <button onclick="switchLang(event, 'se')">Svenska</button>
+</div>
+
+<!-- ENGLISH -->
+<div class="lang-content active" id="en">
+  <h2>1. Acceptance of Terms</h2>
+  <p>
+    By using Viikkoraha (“the Application”), you agree to these Terms of Service.
+    If you do not agree, do not use the Application.
+  </p>
+
+  <h2>2. Description of Service</h2>
+  <p>
+    Viikkoraha is a tool for tracking household chores and managing weekly
+    allowances. The Application operates entirely in your browser and interacts
+    with your own Google Sheets spreadsheets.
+  </p>
+
+  <h2>3. User Data &amp; Privacy</h2>
+  <p>
+    The Application does not collect or store any user data on external servers.
+    All data remains in your own Google Sheets spreadsheets and your browser's
+    local storage. You are solely responsible for the data you enter and for
+    maintaining the security of your Google account. See our
+    <a href="privacy.html">Privacy Policy</a> for details.
+  </p>
+
+  <h2>4. As-Is Basis</h2>
+  <p>
+    The Application is provided <strong>“as is”</strong> without warranty of any
+    kind, either express or implied. The developer makes no guarantees regarding
+    the Application's availability, reliability, or fitness for any particular
+    purpose.
+  </p>
+
+  <h2>5. Changes &amp; Updates</h2>
+  <p>
+    The Application may be updated or modified at any time without prior notice.
+    Continued use of the Application after changes constitutes acceptance of the
+    updated terms.
+  </p>
+
+  <h2>6. No User Support</h2>
+  <p>
+    The Application does not offer dedicated user support. Bug reports and feature
+    requests may be submitted via the project repository, but there is no
+    guarantee of response or resolution.
+  </p>
+
+  <h2>7. Limitation of Liability</h2>
+  <p>
+    To the fullest extent permitted by law, the developer shall not be liable for
+    any direct, indirect, incidental, or consequential damages arising from the
+    use of or inability to use the Application. You assume full responsibility
+    for your use of the Application.
+  </p>
+
+  <h2>8. Governing Law</h2>
+  <p>
+    These terms are governed by the laws of Finland. Any disputes shall be
+    resolved in the courts of Finland.
+  </p>
+
+  <h2>9. Contact</h2>
+  <p>
+    For questions about these terms, contact via the repository:
+    <a href="https://github.com/petekaik/viikkoraha-react">github.com/petekaik/viikkoraha-react</a>
+  </p>
+</div>
+
+<!-- SUOMI -->
+<div class="lang-content" id="fi">
+  <h2>1. Ehtojen hyväksyminen</h2>
+  <p>
+    Käyttämällä Viikkorahaa (“Sovellus”) hyväksyt nämä käyttöehdot. Jos et
+    hyväksy ehtoja, älä käytä Sovellusta.
+  </p>
+
+  <h2>2. Palvelun kuvaus</h2>
+  <p>
+    Viikkoraha on työkalu kotitöiden seurantaan ja viikkorahan hallintaan.
+    Sovellus toimii kokonaan selaimessasi ja käyttää omia Google Sheets
+    -taulukoitasi.
+  </p>
+
+  <h2>3. Käyttäjätiedot ja tietosuoja</h2>
+  <p>
+    Sovellus ei kerää tai tallenna käyttäjätietoja ulkoisille palvelimille.
+    Kaikki tieto säilyy omissa Google Sheets -taulukoissasi ja selaimesi
+    paikallisessa tallennustilassa. Olet yksin vastuussa syöttämistäsi tiedoista
+    ja Google-tilisi turvallisuudesta. Katso
+    <a href="privacy.html">tietosuojaseloste</a> lisätietoja varten.
+  </p>
+
+  <h2>4. Sellaisenaan-periaate</h2>
+  <p>
+    Sovellus tarjotaan <strong>“sellaisenaan”</strong> ilman minkäänlaista
+    nimenomaista tai hiljaista takuuta. Kehittäjä ei takaa Sovelluksen
+    saatavuutta, luotettavuutta tai soveltuvuutta mihinkään tiettyyn
+    tarkoitukseen.
+  </p>
+
+  <h2>5. Muutokset ja päivitykset</h2>
+  <p>
+    Sovellusta voidaan päivittää tai muokata milloin tahansa ilman erillistä
+    ilmoitusta. Jatkamalla Sovelluksen käyttöä muutosten jälkeen hyväksyt
+    päivitetyt ehdot.
+  </p>
+
+  <h2>6. Ei käyttäjätukea</h2>
+  <p>
+    Sovelluksella ei ole erillistä käyttäjätukea. Vikaraportteja ja
+    ominaisuustoiveita voi lähettää projektin repositorion kautta, mutta
+    vastausta tai korjausta ei taata.
+  </p>
+
+  <h2>7. Vastuunrajoitus</h2>
+  <p>
+    Lain sallimissa rajoissa kehittäjä ei ole vastuussa mistään välittömistä,
+    välillisistä, satunnaisista tai seuraamuksellisista vahingoista, jotka
+    aiheutuvat Sovelluksen käytöstä tai käytön estymisestä. Käytät Sovellusta
+    täysin omalla vastuullasi.
+  </p>
+
+  <h2>8. Sovellettava laki</h2>
+  <p>
+    Näihin ehtoihin sovelletaan Suomen lakia. Mahdolliset riidat ratkaistaan
+    Suomen tuomioistuimissa.
+  </p>
+
+  <h2>9. Yhteydenotto</h2>
+  <p>
+    Ehtoja koskevissa kysymyksissä ota yhteyttä repositorion kautta:
+    <a href="https://github.com/petekaik/viikkoraha-react">github.com/petekaik/viikkoraha-react</a>
+  </p>
+</div>
+
+<!-- SVENSKA -->
+<div class="lang-content" id="se">
+  <h2>1. Godkännande av villkor</h2>
+  <p>
+    Genom att använda Viikkoraha (“Applikationen”) godkänner du dessa
+    användarvillkor. Om du inte godkänner villkoren, använd inte Applikationen.
+  </p>
+
+  <h2>2. Tjänstebeskrivning</h2>
+  <p>
+    Viikkoraha är ett verktyg för att följa upp hushållssysslor och hantera
+    veckopeng. Applikationen körs helt i din webbläsare och interagerar med
+    dina egna Google Sheets-kalkylark.
+  </p>
+
+  <h2>3. Användardata och integritet</h2>
+  <p>
+    Applikationen samlar inte in eller lagrar några användardata på externa
+    servrar. All data finns kvar i dina egna Google Sheets-kalkylark och din
+    webbläsares lokala lagring. Du är ensam ansvarig för den data du matar in
+    och för att upprätthålla säkerheten för ditt Google-konto. Se vår
+    <a href="privacy.html">integritetspolicy</a> för detaljer.
+  </p>
+
+  <h2>4. I befintligt skick</h2>
+  <p>
+    Applikationen tillhandahålls <strong>“i befintligt skick”</strong> utan
+    någon som helst garanti, vare sig uttrycklig eller underförstådd.
+    Utvecklaren garanterar inte Applikationens tillgänglighet, tillförlitlighet
+    eller lämplighet för något särskilt ändamål.
+  </p>
+
+  <h2>5. Ändringar och uppdateringar</h2>
+  <p>
+    Applikationen kan uppdateras eller ändras när som helst utan föregående
+    meddelande. Fortsatt användning av Applikationen efter ändringar innebär
+    godkännande av de uppdaterade villkoren.
+  </p>
+
+  <h2>6. Ingen användarsupport</h2>
+  <p>
+    Applikationen erbjuder ingen särskild användarsupport. Felrapporter och
+    funktionsönskemål kan skickas via projektets repositorium, men svar eller
+    åtgärd garanteras inte.
+  </p>
+
+  <h2>7. Ansvarsbegränsning</h2>
+  <p>
+    I den utsträckning lagen tillåter är utvecklaren inte ansvarig för några
+    direkta, indirekta, tillfälliga eller därav följande skador som uppstår
+    genom användning av eller oförmåga att använda Applikationen. Du använder
+    Applikationen på egen risk.
+  </p>
+
+  <h2>8. Tillämplig lag</h2>
+  <p>
+    Dessa villkor styrs av Finlands lagar. Eventuella tvister ska lösas i
+    finländsk domstol.
+  </p>
+
+  <h2>9. Kontakt</h2>
+  <p>
+    För frågor om dessa villkor, kontakta via repositoriet:
+    <a href="https://github.com/petekaik/viikkoraha-react">github.com/petekaik/viikkoraha-react</a>
+  </p>
+</div>
+
+<p class="updated">Last updated · Päivitetty · Senast uppdaterad: 2026-05-04</p>
+
+<script>
+  function switchLang(event, lang) {
+    document.querySelectorAll('.lang-tabs button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.lang-content').forEach(c => c.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById(lang).classList.add('active');
+  }
+</script>
+
+</body>
+</html>

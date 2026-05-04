@@ -44,6 +44,11 @@ echo ""
 echo "═══ 2. BUILD ═══"
 npm run build
 
+# Kopioi docs-tiedostot buildin joukkoon (privacy.html, terms.html)
+echo ""
+echo "═══ 2b. DOCS ═══"
+cp -r docs dist/docs
+
 echo ""
 echo "═══ 3. DEPLOY ═══"
 
