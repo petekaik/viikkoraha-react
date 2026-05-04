@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useLanguageStore } from '../stores/languageStore';
 import {
-  CHORES_RANGE, BOOKINGS_RANGE, SUMS_RANGE, SETTINGS_RANGE, DEFAULT_CHORES,
+  CHORES_RANGE, BOOKINGS_RANGE, SUMS_RANGE, SETTINGS_RANGE, getDefaultChores,
   USERS_HEADERS,
 } from '../utils/sheets-schema';
 import { isGapiReady } from './useGoogleAuth';
@@ -348,8 +349,10 @@ export function useGoogleSheets() {
           { spreadsheetId: sid },
           { requests: [{ addSheet: { properties: { title: 'Chores' } } }] },
         );
+        const lang = useLanguageStore.getState().language;
+        const chores = getDefaultChores(lang);
         const rows = [['ID', 'Description', 'Value', 'DisplayName']];
-        for (const c of DEFAULT_CHORES) rows.push([c.id, c.description, c.value, c.displayName]);
+        for (const c of chores) rows.push([c.id, c.description, c.value, c.displayName]);
         await window.gapi.client.sheets.spreadsheets.values.update(
           { spreadsheetId: sid, range: 'Chores!A1:D', valueInputOption: 'USER_ENTERED' },
           { values: rows },
@@ -440,8 +443,10 @@ export function useGoogleSheets() {
       }
 
       // Populate Chores
+      const lang = useLanguageStore.getState().language;
+      const chores = getDefaultChores(lang);
       const choreRows = [['ID', 'Description', 'Value', 'DisplayName']];
-      for (const c of DEFAULT_CHORES) choreRows.push([c.id, c.description, c.value, c.displayName]);
+      for (const c of chores) choreRows.push([c.id, c.description, c.value, c.displayName]);
       await window.gapi.client.sheets.spreadsheets.values.update(
         { spreadsheetId: newId, range: 'Chores!A1:D', valueInputOption: 'USER_ENTERED' },
         { values: choreRows },
