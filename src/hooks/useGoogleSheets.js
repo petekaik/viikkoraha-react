@@ -288,6 +288,32 @@ export function useGoogleSheets() {
     }),
   [spreadsheetId, call]);
 
+  const deleteBooking = useCallback((rowIndex) =>
+    call(async () => {
+      const sheetRow = rowIndex + 2;
+      const meta = await window.gapi.client.sheets.spreadsheets.get({ spreadsheetId });
+      const sheet = (meta.result.sheets || []).find(
+        (s) => s.properties.title.toLowerCase() === 'bookings',
+      );
+      if (!sheet) throw new Error('Bookings-sivu puuttuu');
+      await window.gapi.client.sheets.spreadsheets.batchUpdate(
+        { spreadsheetId },
+        {
+          requests: [{
+            deleteDimension: {
+              range: {
+                sheetId: sheet.properties.sheetId,
+                dimension: 'ROWS',
+                startIndex: sheetRow - 1,
+                endIndex: sheetRow,
+              },
+            },
+          }],
+        },
+      );
+    }),
+  [spreadsheetId, call]);
+
   const getSummary = useCallback(() =>
     call(async () => {
       // Compute sums directly from Bookings data — independent of Sums-sheet formula order
@@ -463,7 +489,7 @@ export function useGoogleSheets() {
   [call]);
 
   return {
-    getChores, getBookings, appendBooking, updateStatus, getSummary, initSheets,
+    getChores, getBookings, appendBooking, updateStatus, deleteBooking, getSummary, initSheets,
     addChore, updateChore, deleteChore,
     createNewSpreadsheet, clearError,
     loadSettings, saveSettings, ensureSettingsSheet,

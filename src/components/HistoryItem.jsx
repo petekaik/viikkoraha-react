@@ -5,6 +5,7 @@ export default function HistoryItem({
   onApprove,
   onReject,
   onUnpay,
+  onDelete,
   onToggleExpand,
   isExpanded,
 }) {
@@ -111,7 +112,7 @@ export default function HistoryItem({
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={(e) => { e.stopPropagation(); onUnpay?.(booking.rowIndex); }}
-                className="px-3 py-1.5 bg-gray-600 hover:bg-gray-500 rounded-md text-white text-xs font-medium transition-colors"
+                className="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 rounded-md text-white text-xs font-medium transition-colors"
               >
                 {t('ui.actions.backToPending')}
               </button>
@@ -135,9 +136,15 @@ export default function HistoryItem({
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onUnpay?.(booking.rowIndex); }}
-                className="px-3 py-1.5 bg-gray-600 hover:bg-gray-500 rounded-md text-white text-xs font-medium transition-colors"
+                className="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 rounded-md text-white text-xs font-medium transition-colors"
               >
                 {t('ui.actions.backToPending')}
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete?.(booking.rowIndex); }}
+                className="px-3 py-1.5 bg-red-700 hover:bg-red-600 rounded-md text-white text-xs font-medium transition-colors"
+              >
+                {t('ui.actions.delete')}
               </button>
             </div>
           )}

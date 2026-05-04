@@ -3,7 +3,7 @@ import HistoryItem from './HistoryItem';
 import { getISOWeek } from '../utils/dateUtils';
 import { useTranslation } from '../i18n/useTranslation';
 
-export default function HistoryList({ bookings, onApprove, onReject, onUnpay, userName }) {
+export default function HistoryList({ bookings, onApprove, onReject, onUnpay, onDelete, userName }) {
   const [expandedItem, setExpandedItem] = useState(null);
   const { t } = useTranslation();
 
@@ -55,6 +55,7 @@ export default function HistoryList({ bookings, onApprove, onReject, onUnpay, us
               onApprove={onApprove}
               onReject={onReject}
               onUnpay={onUnpay}
+              onDelete={onDelete}
               onToggleExpand={(rowIndex) =>
                 setExpandedItem(expandedItem === rowIndex ? null : rowIndex)
               }

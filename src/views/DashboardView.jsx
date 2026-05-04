@@ -22,7 +22,7 @@ export default function DashboardView() {
   const role = useAuthStore((s) => s.role);
   const spreadsheetId = useSettingsStore((s) => s.spreadsheetId);
   const { login, isLoading: authLoading, error: authError, gapiReady } = useGoogleAuth();
-  const { getSummary, getBookings, updateStatus, isLoading, error, clearError } =
+  const { getSummary, getBookings, updateStatus, deleteBooking, isLoading, error, clearError } =
     useGoogleSheets();
   const { getUsers } = useUsers();
 
@@ -157,6 +157,17 @@ export default function DashboardView() {
     }
   }
 
+  async function handleDelete(rowIndex) {
+    try {
+      await deleteBooking(rowIndex);
+      setNotification({ type: 'success', message: t('ui.dashboard.choreDeleted') });
+      loaded.current = false;
+      await loadData();
+    } catch {
+      setNotification({ type: 'error', message: t('ui.dashboard.deleteFailed') });
+    }
+  }
+
   const summaryData = visibleSummary();
   const bookingList = visibleBookings();
 
@@ -248,6 +259,7 @@ export default function DashboardView() {
                 onApprove={isParent ? handleApprove : undefined}
                 onReject={isParent ? handleReject : undefined}
                 onUnpay={isParent ? handleUnpay : undefined}
+                onDelete={isParent ? handleDelete : undefined}
                 userName={user?.name}
               />
             )}
