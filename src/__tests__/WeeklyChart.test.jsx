@@ -8,20 +8,12 @@ vi.mock('../i18n/useTranslation', () => ({
     t: (key) => {
       const fi = {
         'ui.chart.empty': 'Ei dataa graafiin vielä.',
-        'ui.chart.weekPrefix': 'V',
         'ui.statusLong.paid': 'Maksettu',
         'ui.status.pending': 'odottaa',
       };
       return fi[key] || key;
     },
-    language: 'fi',
-    setLanguage: vi.fn(),
   }),
-}));
-
-// Mock useLanguageStore — return 'fi' so formatWeekLabel uses Finnish
-vi.mock('../stores/languageStore', () => ({
-  useLanguageStore: (selector) => selector({ language: 'fi' }),
 }));
 
 // Week 15: Mon Apr 6 2026, Week 16: Mon Apr 13, Week 17: Mon Apr 20
@@ -51,11 +43,14 @@ describe('WeeklyChart', () => {
     expect(svg).toBeInTheDocument();
   });
 
-  it('renders week labels (ISO weeks from timestamps)', () => {
-    render(<WeeklyChart bookings={sampleBookings} />);
-    expect(screen.getByText('2026 · Viikko 15')).toBeInTheDocument();
-    expect(screen.getByText('2026 · Viikko 16')).toBeInTheDocument();
-    expect(screen.getByText('2026 · Viikko 17')).toBeInTheDocument();
+  it('renders compact week labels (W15, W16, W17)', () => {
+    const { container } = render(<WeeklyChart bookings={sampleBookings} />);
+    const svgText = container.querySelector('svg')?.textContent || '';
+    expect(svgText).toContain('W15');
+    expect(svgText).toContain('W16');
+    expect(svgText).toContain('W17');
+    // Year labels on second line
+    expect(svgText).toContain('2026');
   });
 
   it('renders legend', () => {

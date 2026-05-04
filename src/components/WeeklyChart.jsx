@@ -1,15 +1,19 @@
-import { getISOWeek, formatWeekLabel } from '../utils/dateUtils';
-import { useLanguageStore } from '../stores/languageStore';
+import { getISOWeek } from '../utils/dateUtils';
 import { useTranslation } from '../i18n/useTranslation';
 
 const BAR_MAX_HEIGHT = 160;
-const CHART_HEIGHT = 220;
-const PADDING = { top: 10, right: 12, bottom: 30, left: 40 };
+const CHART_HEIGHT = 240;
+const PADDING = { top: 10, right: 12, bottom: 36, left: 40 };
 const BAR_WIDTH = Math.min(36, 48);
+
+/** Parse "2026-W18" into {year, week} parts */
+function parseWeekKey(key) {
+  const m = key.match(/^(\d{4})-W(\d{2})$/);
+  return m ? { year: m[1], week: m[2] } : { year: '', week: key };
+}
 
 export default function WeeklyChart({ bookings, className = '' }) {
   const { t } = useTranslation();
-  const lang = useLanguageStore((s) => s.language);
 
   if (!bookings || bookings.length === 0) {
     return (
@@ -105,6 +109,7 @@ export default function WeeklyChart({ bookings, className = '' }) {
           const pendingVal = pendingMap[week] || 0;
           const totalVal = paidVal + pendingVal;
           const barX = x(i);
+          const { year, week: wk } = parseWeekKey(week);
 
           return (
             <g key={week}>
@@ -131,16 +136,18 @@ export default function WeeklyChart({ bookings, className = '' }) {
                   fill="#22c55e"
                 />
               )}
-              {/* Week label */}
+              {/* Compact two-line week label */}
               <text
                 x={barX + actualBarW / 2}
-                y={CHART_HEIGHT - 6}
                 textAnchor="middle"
-                fill="#9ca3af"
-                fontSize="10"
                 fontFamily="system-ui, sans-serif"
               >
-                {formatWeekLabel(week, lang)}
+                <tspan x={barX + actualBarW / 2} y={CHART_HEIGHT - 16} fill="#9ca3af" fontSize="10" fontWeight="600">
+                  {`W${wk}`}
+                </tspan>
+                <tspan x={barX + actualBarW / 2} y={CHART_HEIGHT - 4} fill="#6b7280" fontSize="8">
+                  {year}
+                </tspan>
               </text>
               {/* Tooltip value */}
               {totalVal > 0 && (
