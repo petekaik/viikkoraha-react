@@ -118,6 +118,9 @@ export const translations = {
         confirmReset: 'Vahvista nollaus',
         advancedSettings: 'Edistyneet asetukset',
         closeSettings: 'Sulje asetukset',
+        privacy: 'Tietosuojaseloste',
+        terms: 'Käyttöehdot',
+        info: 'Info',
       },
       spreadsheet: {
         label: 'Laskentataulukko',
@@ -284,6 +287,9 @@ export const translations = {
         confirmReset: 'Bekräfta återställning',
         advancedSettings: 'Avancerade inställningar',
         closeSettings: 'Stäng inställningar',
+        privacy: 'Integritetspolicy',
+        terms: 'Användarvillkor',
+        info: 'Info',
       },
       spreadsheet: {
         label: 'Kalkylblad',
@@ -450,6 +456,9 @@ export const translations = {
         confirmReset: 'Confirm reset',
         advancedSettings: 'Advanced settings',
         closeSettings: 'Close settings',
+        privacy: 'Privacy Policy',
+        terms: 'Terms of Service',
+        info: 'Info',
       },
       spreadsheet: {
         label: 'Spreadsheet',

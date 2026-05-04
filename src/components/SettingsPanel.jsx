@@ -311,6 +311,29 @@ export default function SettingsPanel() {
         )}
       </div>
 
+      {/* Info */}
+      <div className="border-t border-gray-700 pt-4">
+        <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">{t('ui.settings.info')}</p>
+        <div className="space-y-1">
+          <a
+            href="docs/privacy.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-sm text-gray-400 hover:text-blue-400 underline underline-offset-2 transition-colors"
+          >
+            {t('ui.settings.privacy')}
+          </a>
+          <a
+            href="docs/terms.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-sm text-gray-400 hover:text-blue-400 underline underline-offset-2 transition-colors"
+          >
+            {t('ui.settings.terms')}
+          </a>
+        </div>
+      </div>
+
       <button
         onClick={handleSave}
         disabled={saving}
