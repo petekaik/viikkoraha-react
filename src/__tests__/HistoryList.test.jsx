@@ -3,6 +3,34 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import HistoryList from '../components/HistoryList';
 
+// Mock useTranslation
+vi.mock('../i18n/useTranslation', () => ({
+  useTranslation: () => ({
+    t: (key) => {
+      const fi = {
+        'ui.history.empty': 'Ei tehtävähistoriaa',
+        'ui.history.weekLabel': 'Viikko',
+        'ui.statusLong.paid': 'Maksettu',
+        'ui.status.pending': 'odottaa',
+        'ui.status.paid': 'maksettu',
+        'ui.status.rejected': 'hylätty',
+        'ui.statusLong.rejected': 'Hylätty',
+        'ui.actions.approve': '✅ Hyväksy',
+        'ui.actions.reject': '❌ Hylkää',
+        'ui.actions.backToPending': '⏪ Palauta',
+        'ui.actions.delete': '🗑️ Poista',
+        'ui.unknown': 'Tuntematon',
+      };
+      return fi[key] || key;
+    },
+  }),
+}));
+
+// Mock useLanguageStore — return 'fi' so formatWeekLabel uses Finnish
+vi.mock('../stores/languageStore', () => ({
+  useLanguageStore: (selector) => selector({ language: 'fi' }),
+}));
+
 const bookings = [
   {
     timestamp: '2026-05-01T10:00:00Z',
@@ -30,9 +58,9 @@ describe('HistoryList', () => {
     expect(screen.getByText('Ei tehtävähistoriaa')).toBeInTheDocument();
   });
 
-  it('renders week headers', () => {
+  it('renders week headers with year', () => {
     render(<HistoryList bookings={bookings} />);
-    const weekHeaders = screen.getAllByText((content) => content.startsWith('Viikko '));
+    const weekHeaders = screen.getAllByText((content) => content.startsWith('2026 ·'));
     expect(weekHeaders.length).toBeGreaterThan(0);
   });
 

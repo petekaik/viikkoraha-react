@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import HistoryItem from './HistoryItem';
-import { getISOWeek } from '../utils/dateUtils';
+import { getISOWeek, formatWeekLabel } from '../utils/dateUtils';
+import { useLanguageStore } from '../stores/languageStore';
 import { useTranslation } from '../i18n/useTranslation';
 
 export default function HistoryList({ bookings, onApprove, onReject, onUnpay, onDelete, userName }) {
   const [expandedItem, setExpandedItem] = useState(null);
   const { t } = useTranslation();
+  const lang = useLanguageStore((s) => s.language);
 
   if (!bookings || bookings.length === 0) {
     return (
@@ -34,19 +36,15 @@ export default function HistoryList({ bookings, onApprove, onReject, onUnpay, on
     });
   }
 
-  // Sort weeks descending (newest week first)
-  const sortedWeeks = [...weeks.entries()].sort(([a], [b]) => {
-    const na = parseInt(a, 10), nb = parseInt(b, 10);
-    if (!isNaN(na) && !isNaN(nb)) return nb - na;
-    return String(b).localeCompare(String(a));
-  });
+  // Sort weeks descending: "2026-W18" format sorts correctly via string compare
+  const sortedWeeks = [...weeks.entries()].sort(([a], [b]) => b.localeCompare(a));
 
   return (
     <div className="mt-4">
       {sortedWeeks.map(([week, items]) => (
         <div key={week} className="mb-2">
           <p className="text-xs text-gray-500 uppercase tracking-wide mt-3 mb-1 font-semibold">
-            {t('ui.history.weekLabel')} {week}
+            {formatWeekLabel(week, lang)}
           </p>
           {items.map((b, i) => (
             <HistoryItem

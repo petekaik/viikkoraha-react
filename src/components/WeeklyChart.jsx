@@ -1,4 +1,5 @@
-import { getISOWeek } from '../utils/dateUtils';
+import { getISOWeek, formatWeekLabel } from '../utils/dateUtils';
+import { useLanguageStore } from '../stores/languageStore';
 import { useTranslation } from '../i18n/useTranslation';
 
 const BAR_MAX_HEIGHT = 160;
@@ -8,6 +9,7 @@ const BAR_WIDTH = Math.min(36, 48);
 
 export default function WeeklyChart({ bookings, className = '' }) {
   const { t } = useTranslation();
+  const lang = useLanguageStore((s) => s.language);
 
   if (!bookings || bookings.length === 0) {
     return (
@@ -33,11 +35,8 @@ export default function WeeklyChart({ bookings, className = '' }) {
     }
   }
 
-  const weeks = Object.keys(weekMap).sort((a, b) => {
-    const na = parseInt(a, 10), nb = parseInt(b, 10);
-    if (!isNaN(na) && !isNaN(nb)) return na - nb;
-    return a.localeCompare(b);
-  });
+  // Sort weeks ascending: "2026-W18" format sorts correctly via string compare
+  const weeks = Object.keys(weekMap).sort();
 
   const maxVal = Math.max(
     ...weeks.map((w) => (weekMap[w] || 0) + (pendingMap[w] || 0)),
@@ -141,7 +140,7 @@ export default function WeeklyChart({ bookings, className = '' }) {
                 fontSize="10"
                 fontFamily="system-ui, sans-serif"
               >
-                {t('ui.chart.weekPrefix')}{week}
+                {formatWeekLabel(week, lang)}
               </text>
               {/* Tooltip value */}
               {totalVal > 0 && (

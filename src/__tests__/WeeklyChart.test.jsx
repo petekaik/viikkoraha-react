@@ -19,6 +19,11 @@ vi.mock('../i18n/useTranslation', () => ({
   }),
 }));
 
+// Mock useLanguageStore — return 'fi' so formatWeekLabel uses Finnish
+vi.mock('../stores/languageStore', () => ({
+  useLanguageStore: (selector) => selector({ language: 'fi' }),
+}));
+
 // Week 15: Mon Apr 6 2026, Week 16: Mon Apr 13, Week 17: Mon Apr 20
 const sampleBookings = [
   { timestamp: '2026-04-06T10:00:00Z', value: 5, status: 'paid' },
@@ -48,9 +53,9 @@ describe('WeeklyChart', () => {
 
   it('renders week labels (ISO weeks from timestamps)', () => {
     render(<WeeklyChart bookings={sampleBookings} />);
-    expect(screen.getByText('V15')).toBeInTheDocument();
-    expect(screen.getByText('V16')).toBeInTheDocument();
-    expect(screen.getByText('V17')).toBeInTheDocument();
+    expect(screen.getByText('2026 · Viikko 15')).toBeInTheDocument();
+    expect(screen.getByText('2026 · Viikko 16')).toBeInTheDocument();
+    expect(screen.getByText('2026 · Viikko 17')).toBeInTheDocument();
   });
 
   it('renders legend', () => {
