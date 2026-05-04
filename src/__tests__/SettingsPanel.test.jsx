@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import SettingsPanel from '../components/SettingsPanel';
 import { useAuthStore } from '../stores/authStore';
@@ -11,6 +11,36 @@ vi.mock('react-router-dom', () => ({
   HashRouter: ({ children }) => children,
   Routes: ({ children }) => children,
   Route: ({ element }) => element,
+}));
+
+// Mock useTranslation — return Finnish translations
+vi.mock('../i18n/useTranslation', () => ({
+  useTranslation: () => ({
+    t: (key, params) => {
+      const fi = {
+        'ui.unknownUser': 'Käyttäjä',
+        'ui.settings.logout': '🔓 Kirjaudu ulos',
+        'ui.settings.promoteToParent': '👑 Aseta vanhemman rooli',
+        'ui.settings.promoting': 'Asetetaan...',
+        'ui.settings.save': 'Tallenna',
+        'ui.settings.saving': 'Tallennetaan...',
+        'ui.settings.advancedSettings': 'Edistyneet asetukset',
+        'ui.settings.manageChores': '⚙️ Hallinnoi askareita',
+        'ui.settings.manageUsers': '👥 Hallinnoi käyttäjiä',
+        'ui.settings.resetAll': 'Nollaa kaikki tiedot',
+        'ui.settings.confirmReset': 'Vahvista nollaus',
+        'ui.settings.clientIdPlaceholder': 'xxx.apps.googleusercontent.com (tyhjä = käytä oletusta)',
+        'ui.settings.apiKeyPlaceholder': 'AIzaSy... (tyhjä = käytä oletusta)',
+        'ui.settings.ownProjectNote': 'Vain jos käytät omaa Google Cloud -projektia',
+        'ui.settings.language': 'Kieli',
+        'ui.admin.users.roleParentShort': 'vanhempi',
+        'ui.admin.users.roleChildShort': 'lapsi',
+      };
+      return fi[key] || key;
+    },
+    language: 'fi',
+    setLanguage: vi.fn(),
+  }),
 }));
 
 // Mock hooks that reach out to Google APIs
@@ -48,7 +78,7 @@ describe('SettingsPanel profile section', () => {
 
   it('does not show profile when signed out', () => {
     render(<SettingsPanel />);
-    expect(screen.queryByText('Kirjaudu ulos')).toBeFalsy();
+    expect(screen.queryByText('🔓 Kirjaudu ulos')).toBeFalsy();
   });
 
   it('shows profile with name and email when signed in', () => {
@@ -79,7 +109,6 @@ describe('SettingsPanel profile section', () => {
     });
     render(<SettingsPanel />);
     expect(screen.getByText('Matti')).toBeInTheDocument();
-    // Should show emoji fallback, not an img
     expect(screen.queryByRole('img')).toBeFalsy();
   });
 

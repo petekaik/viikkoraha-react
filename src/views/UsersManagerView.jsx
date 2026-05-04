@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useUsers } from '../hooks/useUsers';
+import { useTranslation } from '../i18n/useTranslation';
 import NotificationBar from '../components/NotificationBar';
 
 const EMPTY_USER = { email: '', name: '', role: 'child' };
 
 export default function UsersManager() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const role = useAuthStore((s) => s.role);
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
@@ -61,11 +63,11 @@ export default function UsersManager() {
     const userRole = form.role;
 
     if (!email || !name) {
-      setNotification({ type: 'error', message: 'Täytä sähköposti ja nimi.' });
+      setNotification({ type: 'error', message: t('ui.admin.users.formValidation') });
       return;
     }
     if (!email.includes('@')) {
-      setNotification({ type: 'error', message: 'Sähköposti ei ole kelvollinen.' });
+      setNotification({ type: 'error', message: t('ui.admin.users.invalidEmail') });
       return;
     }
 
@@ -82,7 +84,7 @@ export default function UsersManager() {
       } else {
         // Check for duplicate
         if (users.some((u) => u.email.toLowerCase() === email)) {
-          setNotification({ type: 'error', message: 'Käyttäjä on jo listalla.' });
+          setNotification({ type: 'error', message: t('ui.admin.users.duplicate') });
           setIsSaving(false);
           return;
         }
@@ -92,12 +94,12 @@ export default function UsersManager() {
       await saveUsers(updated);
       setNotification({
         type: 'success',
-        message: editing ? 'Käyttäjä päivitetty.' : 'Käyttäjä lisätty.',
+        message: editing ? t('ui.admin.users.updated') : t('ui.admin.users.added'),
       });
       resetForm();
       setUsers(updated); // optimistic update — saveUsers just wrote to sheet
     } catch {
-      setNotification({ type: 'error', message: 'Tallennus epäonnistui.' });
+      setNotification({ type: 'error', message: t('ui.admin.saveFailed') });
     } finally {
       setIsSaving(false);
     }
@@ -117,20 +119,20 @@ export default function UsersManager() {
       await saveUsers(updated);
       setNotification({
         type: 'success',
-        message: `"${deleteTarget.name}" poistettu.`,
+        message: t('ui.admin.users.deleted', { name: deleteTarget.name }),
       });
       setDeleteTarget(null);
       setUsers(updated);
     } catch {
-      setNotification({ type: 'error', message: 'Poisto epäonnistui.' });
+      setNotification({ type: 'error', message: t('ui.admin.deleteFailed') });
       setDeleteTarget(null);
     } finally {
       setIsSaving(false);
     }
   }
 
-  if (!isSignedIn) return <p className="text-gray-400 p-4">Kirjaudu sisään.</p>;
-  if (!spreadsheetId) return <p className="text-gray-400 p-4">Valitse taulukko ensin.</p>;
+  if (!isSignedIn) return <p className="text-gray-400 p-4">{t('ui.admin.loginRequired')}</p>;
+  if (!spreadsheetId) return <p className="text-gray-400 p-4">{t('ui.admin.selectSpreadsheetFirst')}</p>;
 
   return (
     <div className="p-4 space-y-4">
@@ -138,10 +140,10 @@ export default function UsersManager() {
         onClick={() => navigate('/')}
         className="text-xs text-blue-400 hover:underline"
       >
-        ← Takaisin
+        ← {t('ui.admin.back')}
       </button>
 
-      <h2 className="text-lg font-bold text-white">Perheenjäsenten hallinta</h2>
+      <h2 className="text-lg font-bold text-white">{t('ui.admin.users.management')}</h2>
 
       {notification && (
         <NotificationBar
@@ -154,11 +156,11 @@ export default function UsersManager() {
       {/* Add / Edit form */}
       <form onSubmit={handleSubmit} className="space-y-3 rounded-xl bg-gray-800 p-4">
         <h3 className="text-sm font-semibold text-gray-300">
-          {editing ? `Muokataan: ${editing.name}` : 'Lisää perheenjäsen'}
+          {editing ? t('ui.admin.users.editing', { name: editing.name }) : t('ui.admin.users.addMember')}
         </h3>
 
         <input
-          placeholder="Sähköposti (Google-tili)"
+          placeholder={t('ui.admin.users.emailPlaceholder')}
           value={form.email}
           onChange={(e) => handleField('email', e.target.value)}
           type="email"
@@ -168,7 +170,7 @@ export default function UsersManager() {
         />
 
         <input
-          placeholder="Nimi (näytetään sovelluksessa)"
+          placeholder={t('ui.admin.users.namePlaceholder')}
           value={form.name}
           onChange={(e) => handleField('name', e.target.value)}
           className="w-full rounded-lg bg-gray-700 px-3 py-2 text-sm text-white placeholder-gray-500 outline-none ring-1 ring-gray-600 focus:ring-blue-500"
@@ -179,8 +181,8 @@ export default function UsersManager() {
           onChange={(e) => handleField('role', e.target.value)}
           className="w-full rounded-lg bg-gray-700 px-3 py-2 text-sm text-white outline-none ring-1 ring-gray-600 focus:ring-blue-500"
         >
-          <option value="child">Lapsi — voi varata askareita</option>
-          <option value="parent">Vanhempi — voi hallita kaikkea</option>
+          <option value="child">{t('ui.admin.users.roleChild')}</option>
+          <option value="parent">{t('ui.admin.users.roleParent')}</option>
         </select>
 
         <div className="flex gap-2">
@@ -189,7 +191,7 @@ export default function UsersManager() {
             disabled={isSaving}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
           >
-            {isSaving ? 'Tallennetaan...' : editing ? 'Päivitä' : 'Lisää'}
+            {isSaving ? t('ui.admin.saving') : editing ? t('ui.admin.update') : t('ui.admin.add')}
           </button>
           {editing && (
             <button
@@ -197,7 +199,7 @@ export default function UsersManager() {
               onClick={resetForm}
               className="rounded-lg bg-gray-700 px-4 py-2 text-sm text-gray-300 hover:bg-gray-600"
             >
-              Peru
+              {t('ui.admin.cancel')}
             </button>
           )}
         </div>
@@ -206,7 +208,7 @@ export default function UsersManager() {
       {/* User list */}
       <div className="space-y-2">
         {users.length === 0 ? (
-          <p className="text-gray-500 text-sm">Ei perheenjäseniä. Lisää ensimmäinen!</p>
+          <p className="text-gray-500 text-sm">{t('ui.admin.users.noMembers')}</p>
         ) : (
           users.map((user) => (
             <div
@@ -217,10 +219,14 @@ export default function UsersManager() {
                 <p className="text-sm font-medium text-white truncate">
                   {user.name}
                   {user.role === 'parent' && (
-                    <span className="ml-1 text-xs text-yellow-500 font-normal">(vanhempi)</span>
+                    <span className="ml-1 text-xs text-yellow-500 font-normal">
+                      ({t('ui.admin.users.roleParentShort')})
+                    </span>
                   )}
                   {user.role === 'child' && (
-                    <span className="ml-1 text-xs text-blue-400 font-normal">(lapsi)</span>
+                    <span className="ml-1 text-xs text-blue-400 font-normal">
+                      ({t('ui.admin.users.roleChildShort')})
+                    </span>
                   )}
                 </p>
                 <p className="text-xs text-gray-500 truncate">{user.email}</p>
@@ -229,14 +235,14 @@ export default function UsersManager() {
                 <button
                   onClick={() => startEdit(user)}
                   className="rounded-lg bg-gray-700 px-2 py-1 text-xs text-blue-400 hover:bg-gray-600"
-                  aria-label={`Muokkaa käyttäjää ${user.name}`}
+                  aria-label={t('ui.admin.users.editLabel', { name: user.name })}
                 >
                   ✏️
                 </button>
                 <button
                   onClick={() => handleDelete(user)}
                   className="rounded-lg bg-gray-700 px-2 py-1 text-xs text-red-400 hover:bg-gray-600"
-                  aria-label={`Poista käyttäjä ${user.name}`}
+                  aria-label={t('ui.admin.users.deleteLabel', { name: user.name })}
                 >
                   🗑️
                 </button>
@@ -251,23 +257,22 @@ export default function UsersManager() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="mx-4 w-full max-w-sm rounded-2xl bg-gray-800 p-6 shadow-xl">
             <p className="text-sm text-white mb-4">
-              Poistetaanko{' '}
-              <span className="font-semibold">"{deleteTarget.name}"</span>?
-              {' '}Tätä ei voi perua.
+              {t('ui.admin.users.confirmDelete', { name: deleteTarget.name })}
+              {' '}{t('ui.admin.irreversible')}
             </p>
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setDeleteTarget(null)}
                 className="rounded-lg bg-gray-700 px-4 py-2 text-sm text-gray-300 hover:bg-gray-600"
               >
-                Peru
+                {t('ui.admin.cancel')}
               </button>
               <button
                 onClick={confirmDelete}
                 disabled={isSaving}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50"
               >
-                Poista
+                {t('ui.admin.delete')}
               </button>
             </div>
           </div>

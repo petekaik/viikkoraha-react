@@ -1,6 +1,23 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import WeeklyChart from '../components/WeeklyChart';
+
+// Mock useTranslation — return Finnish translations
+vi.mock('../i18n/useTranslation', () => ({
+  useTranslation: () => ({
+    t: (key) => {
+      const fi = {
+        'ui.chart.empty': 'Ei dataa graafiin vielä.',
+        'ui.chart.weekPrefix': 'V',
+        'ui.statusLong.paid': 'Maksettu',
+        'ui.status.pending': 'odottaa',
+      };
+      return fi[key] || key;
+    },
+    language: 'fi',
+    setLanguage: vi.fn(),
+  }),
+}));
 
 // Week 15: Mon Apr 6 2026, Week 16: Mon Apr 13, Week 17: Mon Apr 20
 const sampleBookings = [
@@ -31,7 +48,6 @@ describe('WeeklyChart', () => {
 
   it('renders week labels (ISO weeks from timestamps)', () => {
     render(<WeeklyChart bookings={sampleBookings} />);
-    // Apr 6 = week 15, Apr 14 = week 16, Apr 20 = week 17
     expect(screen.getByText('V15')).toBeInTheDocument();
     expect(screen.getByText('V16')).toBeInTheDocument();
     expect(screen.getByText('V17')).toBeInTheDocument();
@@ -40,7 +56,7 @@ describe('WeeklyChart', () => {
   it('renders legend', () => {
     render(<WeeklyChart bookings={sampleBookings} />);
     expect(screen.getByText('Maksettu')).toBeInTheDocument();
-    expect(screen.getByText('Odottaa')).toBeInTheDocument();
+    expect(screen.getByText('odottaa')).toBeInTheDocument();
   });
 
   it('renders value labels on bars', () => {
@@ -48,7 +64,6 @@ describe('WeeklyChart', () => {
     const svg = container.querySelector('svg');
     expect(svg).toBeInTheDocument();
     const texts = Array.from(svg.querySelectorAll('text')).map((t) => t.textContent);
-    // Week 15: 5 + 3 + 2 = 10€, Week 16: 4 + 1 = 5€, Week 17: 6€
     expect(texts.filter((t) => t === '10€').length).toBeGreaterThanOrEqual(1);
     expect(texts.filter((t) => t === '6€').length).toBeGreaterThanOrEqual(1);
     expect(texts.filter((t) => t === '5€').length).toBeGreaterThanOrEqual(1);

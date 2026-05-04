@@ -6,6 +6,7 @@ import HomeView from './views/HomeView';
 import DashboardView from './views/DashboardView';
 import ChoreManagerView from './views/ChoreManagerView';
 import UsersManagerView from './views/UsersManagerView';
+import { translations } from './i18n/translations';
 import './index.css';
 
 // ── Service Worker ──
@@ -33,7 +34,20 @@ if ('serviceWorker' in navigator) {
           font-size:14px;font-weight:600;z-index:9999;cursor:pointer;
           box-shadow:0 4px 16px rgba(0,0,0,0.3);animation:slideUp 0.3s ease;
         `;
-        banner.textContent = '🔄 Uusi versio — päivitä napauttamalla';
+        // Get language from settings store or default to fi
+        const lang = (() => {
+          try {
+            const raw = localStorage.getItem('viikkoraha-settings');
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed?.state?.language && translations[parsed.state.language]) {
+                return parsed.state.language;
+              }
+            }
+          } catch { /* fallthrough */ }
+          return 'fi';
+        })();
+        banner.textContent = translations[lang]?.ui?.app?.updateBanner || '🔄 Uusi versio — päivitä napauttamalla';
         banner.addEventListener('click', () => {
           // Tell SW to skip waiting, then reload
           if (navigator.serviceWorker.controller) {

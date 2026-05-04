@@ -1,10 +1,12 @@
 import { useApp } from '../utils/AppContext';
+import { useTranslation } from '../i18n/useTranslation';
 
 /**
  * Onboarding card shown when user is signed in but no spreadsheet is selected.
  * Guides user through: Open Settings → Pick/Create Sheet → Start using.
  */
 export default function OnboardingGuide() {
+  const { t } = useTranslation();
   const { openSettings } = useApp();
 
   return (
@@ -13,13 +15,13 @@ export default function OnboardingGuide() {
         <div className="text-4xl mb-4">🚀</div>
         <h2 className="text-xl font-bold text-white mb-2">Tervetuloa Viikkorahaan!</h2>
         <p className="text-gray-400 text-sm mb-6">
-          Aloitetaan valitsemalla laskentataulukko johon kotityöt tallennetaan.
+          {t('ui.onboarding.intro')}
         </p>
 
         <ol className="text-left text-sm text-gray-300 space-y-3 mb-6">
           <li className="flex gap-3">
             <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-700 text-white text-xs flex items-center justify-center font-bold">1</span>
-            <span>Avaa <strong>Asetukset</strong> vasemman yläkulman hammasratas-kuvakkeesta</span>
+            <span>{t('ui.onboarding.step1')}</span>
           </li>
           <li className="flex gap-3">
             <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-700 text-white text-xs flex items-center justify-center font-bold">2</span>
@@ -27,7 +29,7 @@ export default function OnboardingGuide() {
           </li>
           <li className="flex gap-3">
             <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-700 text-white text-xs flex items-center justify-center font-bold">3</span>
-            <span>Sovellus tarkistaa rakenteen automaattisesti — voit aloittaa kotitöiden kirjauksen!</span>
+            <span>{t('ui.onboarding.step2')}</span>
           </li>
         </ol>
 

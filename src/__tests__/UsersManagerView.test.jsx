@@ -11,6 +11,51 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
 }));
 
+// Mock useTranslation — return Finnish translations
+vi.mock('../i18n/useTranslation', () => ({
+  useTranslation: () => ({
+    t: (key, params) => {
+      const fi = {
+        'ui.admin.back': 'Takaisin',
+        'ui.admin.loginRequired': 'Kirjaudu sisään.',
+        'ui.admin.selectSpreadsheetFirst': 'Valitse taulukko ensin.',
+        'ui.admin.saveFailed': 'Tallennus epäonnistui.',
+        'ui.admin.deleteFailed': 'Poisto epäonnistui.',
+        'ui.admin.saving': 'Tallennetaan...',
+        'ui.admin.update': 'Päivitä',
+        'ui.admin.add': 'Lisää',
+        'ui.admin.cancel': 'Peru',
+        'ui.admin.delete': 'Poista',
+        'ui.admin.loading': 'Ladataan...',
+        'ui.admin.irreversible': 'Tätä ei voi perua.',
+        'ui.admin.users.management': 'Perheenjäsenten hallinta',
+        'ui.admin.users.addMember': 'Lisää perheenjäsen',
+        'ui.admin.users.editing': `Muokataan: ${params?.name || ''}`,
+        'ui.admin.users.emailPlaceholder': 'Sähköposti (Google-tili)',
+        'ui.admin.users.namePlaceholder': 'Nimi (näytetään sovelluksessa)',
+        'ui.admin.users.roleChild': 'Lapsi — voi varata askareita',
+        'ui.admin.users.roleParent': 'Vanhempi — voi hallita kaikkea',
+        'ui.admin.users.roleParentShort': 'vanhempi',
+        'ui.admin.users.roleChildShort': 'lapsi',
+        'ui.admin.users.noMembers': 'Ei perheenjäseniä. Lisää ensimmäinen!',
+        'ui.admin.users.formValidation': 'Täytä sähköposti ja nimi.',
+        'ui.admin.users.invalidEmail': 'Sähköposti ei ole kelvollinen.',
+        'ui.admin.users.duplicate': 'Käyttäjä on jo listalla.',
+        'ui.admin.users.updated': 'Käyttäjä päivitetty.',
+        'ui.admin.users.added': 'Käyttäjä lisätty.',
+        'ui.admin.users.deleted': `"${params?.name || ''}" poistettu.`,
+        'ui.admin.users.confirmDelete': `Poistetaanko "${params?.name || ''}"?`,
+        'ui.admin.users.editLabel': `Muokkaa käyttäjää ${params?.name || ''}`,
+        'ui.admin.users.deleteLabel': `Poista käyttäjä ${params?.name || ''}`,
+        'ui.unknownUser': 'Käyttäjä',
+      };
+      return fi[key] || key;
+    },
+    language: 'fi',
+    setLanguage: vi.fn(),
+  }),
+}));
+
 // Mock useUsers
 const mockGetUsers = vi.fn();
 const mockSaveUsers = vi.fn();
@@ -177,7 +222,6 @@ describe('UsersManagerView', () => {
       'X'
     );
 
-    // fireEvent.submit on the form is more reliable than clicking submit button in jsdom
     const form = document.querySelector('form');
     fireEvent.submit(form);
 
@@ -199,7 +243,6 @@ describe('UsersManagerView', () => {
       screen.getByPlaceholderText('Sähköposti (Google-tili)'),
       'test@example.com'
     );
-    // leave name empty
 
     await userEvent.click(screen.getByText('Lisää'));
 

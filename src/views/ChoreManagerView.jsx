@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useGoogleSheets } from '../hooks/useGoogleSheets';
+import { useTranslation } from '../i18n/useTranslation';
 import NotificationBar from '../components/NotificationBar';
 
 const EMPTY_CHORE = { id: '', description: '', value: '', displayName: '' };
 
 export default function ChoreManager() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const role = useAuthStore((s) => s.role);
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
@@ -61,22 +63,22 @@ export default function ChoreManager() {
     const valueNum = parseFloat(rawValue);
 
     if (!id || !description || isNaN(valueNum)) {
-      setNotification({ type: 'error', message: 'Täytä ID, kuvaus ja arvo (numero).' });
+      setNotification({ type: 'error', message: t('ui.admin.choreFormValidation') });
       return;
     }
 
     try {
       if (editing) {
         await updateChore(editing.rowIndex, id, description, valueNum, displayName);
-        setNotification({ type: 'success', message: 'Askare päivitetty.' });
+        setNotification({ type: 'success', message: t('ui.admin.choreUpdated') });
       } else {
         await addChore(id, description, valueNum, displayName);
-        setNotification({ type: 'success', message: 'Askare lisätty.' });
+        setNotification({ type: 'success', message: t('ui.admin.choreAdded') });
       }
       resetForm();
       await loadChores();
     } catch {
-      setNotification({ type: 'error', message: 'Tallennus epäonnistui.' });
+      setNotification({ type: 'error', message: t('ui.admin.saveFailed') });
     }
   }
 
@@ -88,17 +90,17 @@ export default function ChoreManager() {
     if (!deleteTarget) return;
     try {
       await deleteChore(deleteTarget.rowIndex);
-      setNotification({ type: 'success', message: `"${deleteTarget.displayName}" poistettu.` });
+      setNotification({ type: 'success', message: t('ui.admin.choreDeleted', { name: deleteTarget.displayName }) });
       setDeleteTarget(null);
       await loadChores();
     } catch {
-      setNotification({ type: 'error', message: 'Poisto epäonnistui.' });
+      setNotification({ type: 'error', message: t('ui.admin.deleteFailed') });
       setDeleteTarget(null);
     }
   }
 
-  if (!isSignedIn) return <p className="text-gray-400 p-4">Kirjaudu sisään.</p>;
-  if (!spreadsheetId) return <p className="text-gray-400 p-4">Valitse taulukko ensin.</p>;
+  if (!isSignedIn) return <p className="text-gray-400 p-4">{t('ui.admin.loginRequired')}</p>;
+  if (!spreadsheetId) return <p className="text-gray-400 p-4">{t('ui.admin.selectSpreadsheetFirst')}</p>;
 
   return (
     <div className="p-4 space-y-4">
@@ -106,10 +108,10 @@ export default function ChoreManager() {
         onClick={() => navigate('/')}
         className="text-xs text-blue-400 hover:underline"
       >
-        ← Takaisin
+        ← {t('ui.admin.back')}
       </button>
 
-      <h2 className="text-lg font-bold text-white">Askareiden hallinta</h2>
+      <h2 className="text-lg font-bold text-white">{t('ui.admin.choreManagement')}</h2>
 
       {notification && (
         <NotificationBar
@@ -129,28 +131,28 @@ export default function ChoreManager() {
       {/* Add / Edit form */}
       <form onSubmit={handleSubmit} className="space-y-3 rounded-xl bg-gray-800 p-4">
         <h3 className="text-sm font-semibold text-gray-300">
-          {editing ? `Muokataan: ${editing.displayName}` : 'Uusi askare'}
+          {editing ? t('ui.admin.editingChore', { name: editing.displayName }) : t('ui.admin.newChore')}
         </h3>
         <input
-          placeholder="ID (esim. imurointi)"
+          placeholder={t('ui.admin.choreIdPlaceholder')}
           value={form.id}
           onChange={(e) => handleField('id', e.target.value)}
           className="w-full rounded-lg bg-gray-700 px-3 py-2 text-sm text-white placeholder-gray-500 outline-none ring-1 ring-gray-600 focus:ring-blue-500"
         />
         <input
-          placeholder="Kuvaus"
+          placeholder={t('ui.admin.choreDescriptionLabel')}
           value={form.description}
           onChange={(e) => handleField('description', e.target.value)}
           className="w-full rounded-lg bg-gray-700 px-3 py-2 text-sm text-white placeholder-gray-500 outline-none ring-1 ring-gray-600 focus:ring-blue-500"
         />
         <input
-          placeholder="Näyttönimi (valinnainen)"
+          placeholder={t('ui.admin.choreDisplayNamePlaceholder')}
           value={form.displayName}
           onChange={(e) => handleField('displayName', e.target.value)}
           className="w-full rounded-lg bg-gray-700 px-3 py-2 text-sm text-white placeholder-gray-500 outline-none ring-1 ring-gray-600 focus:ring-blue-500"
         />
         <input
-          placeholder="Arvo (€)"
+          placeholder={t('ui.admin.choreValuePlaceholder')}
           value={form.value}
           onChange={(e) => handleField('value', e.target.value)}
           type="text"
@@ -163,11 +165,11 @@ export default function ChoreManager() {
             disabled={isLoading}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
           >
-            {isLoading ? 'Tallennetaan...' : editing ? 'Päivitä' : 'Lisää'}
+            {isLoading ? t('ui.admin.saving') : editing ? t('ui.admin.update') : t('ui.admin.add')}
           </button>
           {editing && (
             <button type="button" onClick={resetForm} className="rounded-lg bg-gray-700 px-4 py-2 text-sm text-gray-300 hover:bg-gray-600">
-              Peru
+              {t('ui.admin.cancel')}
             </button>
           )}
         </div>
@@ -176,9 +178,9 @@ export default function ChoreManager() {
       {/* Chore list */}
       <div className="space-y-2">
         {isLoading && chores.length === 0 ? (
-          <p className="text-gray-500 text-sm">Ladataan...</p>
+          <p className="text-gray-500 text-sm">{t('ui.admin.loading')}</p>
         ) : chores.length === 0 ? (
-          <p className="text-gray-500 text-sm">Ei askareita. Lisää ensimmäinen!</p>
+          <p className="text-gray-500 text-sm">{t('ui.admin.noChores')}</p>
         ) : (
           chores.map((chore) => (
             <div
@@ -217,21 +219,21 @@ export default function ChoreManager() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="mx-4 w-full max-w-sm rounded-2xl bg-gray-800 p-6 shadow-xl">
             <p className="text-sm text-white mb-4">
-              Poistetaanko <span className="font-semibold">"{deleteTarget.displayName}"</span>?
-              Tätä ei voi perua.
+              {t('ui.admin.confirmDelete', { name: deleteTarget.displayName })}
+              {' '}{t('ui.admin.irreversible')}
             </p>
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setDeleteTarget(null)}
                 className="rounded-lg bg-gray-700 px-4 py-2 text-sm text-gray-300 hover:bg-gray-600"
               >
-                Peru
+                {t('ui.admin.cancel')}
               </button>
               <button
                 onClick={confirmDelete}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500"
               >
-                Poista
+                {t('ui.admin.delete')}
               </button>
             </div>
           </div>

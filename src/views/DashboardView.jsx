@@ -5,6 +5,7 @@ import { useGoogleAuth } from '../hooks/useGoogleAuth';
 import { useGoogleSheets } from '../hooks/useGoogleSheets';
 import { useUsers } from '../hooks/useUsers';
 import { ROLES } from '../utils/sheets-schema';
+import { useTranslation } from '../i18n/useTranslation';
 import LoginPrompt from '../components/LoginPrompt';
 import OnboardingGuide from '../components/OnboardingGuide';
 import DashboardSummary from '../components/DashboardSummary';
@@ -15,6 +16,7 @@ import NotificationBar from '../components/NotificationBar';
 const AUTO_REFRESH_MS = 30_000;
 
 export default function DashboardView() {
+  const { t } = useTranslation();
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
   const user = useAuthStore((s) => s.user);
   const role = useAuthStore((s) => s.role);
@@ -124,11 +126,11 @@ export default function DashboardView() {
     const payerName = user?.name || 'Tuntematon';
     try {
       await updateStatus(rowIndex, 'paid', payerName);
-      setNotification({ type: 'success', message: 'Viikkorahatehtävä maksettu ✓' });
+      setNotification({ type: 'success', message: t('ui.dashboard.chorePaid') });
       loaded.current = false;
       await loadData();
     } catch {
-      setNotification({ type: 'error', message: 'Kuittaus epäonnistui' });
+      setNotification({ type: 'error', message: t('ui.dashboard.approveFailed') });
     }
   }
 
@@ -136,22 +138,22 @@ export default function DashboardView() {
     const payerName = user?.name || 'Tuntematon';
     try {
       await updateStatus(rowIndex, 'rejected', payerName);
-      setNotification({ type: 'info', message: 'Tehtävä hylätty' });
+      setNotification({ type: 'info', message: t('ui.dashboard.choreRejected') });
       loaded.current = false;
       await loadData();
     } catch {
-      setNotification({ type: 'error', message: 'Hylkäys epäonnistui' });
+      setNotification({ type: 'error', message: t('ui.dashboard.rejectFailed') });
     }
   }
 
   async function handleUnpay(rowIndex) {
     try {
       await updateStatus(rowIndex, 'pending', '');
-      setNotification({ type: 'info', message: 'Tehtävä palautettu maksamatta-tilaan' });
+      setNotification({ type: 'info', message: t('ui.dashboard.choreUnpaid') });
       loaded.current = false;
       await loadData();
     } catch {
-      setNotification({ type: 'error', message: 'Palautus epäonnistui' });
+      setNotification({ type: 'error', message: t('ui.dashboard.unpayFailed') });
     }
   }
 
@@ -198,7 +200,7 @@ export default function DashboardView() {
               onChange={(e) => setSelectedChild(e.target.value)}
               className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="__all__">Kaikki lapset</option>
+              <option value="__all__">{t('ui.dashboard.allChildren')}</option>
               {children.map((c) => (
                 <option key={c.email} value={c.email}>{c.name || c.email}</option>
               ))}
@@ -218,7 +220,7 @@ export default function DashboardView() {
                 : 'border-transparent text-gray-500 hover:text-gray-300'
             }`}
           >
-            Yhteenveto
+            {t('ui.dashboard.summary')}
           </button>
           <button
             onClick={() => setActiveTab('chart')}
@@ -228,17 +230,17 @@ export default function DashboardView() {
                 : 'border-transparent text-gray-500 hover:text-gray-300'
             }`}
           >
-            Graafi
+            {t('ui.dashboard.chart')}
           </button>
         </div>
 
         {activeTab === 'summary' ? (
           <>
-            <h2 className="text-lg font-semibold text-gray-300 mb-2">Tehtävähistoria</h2>
+            <h2 className="text-lg font-semibold text-gray-300 mb-2">{t('ui.dashboard.taskHistory')}</h2>
             {isLoading && allBookings.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-3">
                 <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
-                <p className="text-gray-400 text-sm">Ladataan...</p>
+                <p className="text-gray-400 text-sm">{t('ui.dashboard.loading')}</p>
               </div>
             ) : (
               <HistoryList

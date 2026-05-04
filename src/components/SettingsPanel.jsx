@@ -9,10 +9,13 @@ import { saveSettingsToSheet, ensureSettingsSheet } from '../utils/settingsSync'
 import { validateClientId, validateApiKey } from '../utils/validation';
 import { ROLES, USERS_RANGE } from '../utils/sheets-schema';
 import { useApp } from '../utils/AppContext';
+import { useTranslation } from '../i18n/useTranslation';
 import NotificationBar from './NotificationBar';
 import SpreadsheetPicker from './SpreadsheetPicker';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export default function SettingsPanel() {
+  const { t } = useTranslation();
   const { clientId, apiKey, spreadsheetId, setClientId, setApiKey, setSpreadsheetId, clear } =
     useSettingsStore();
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
@@ -65,13 +68,13 @@ export default function SettingsPanel() {
         try {
           await ensureSettingsSheet(spreadsheetId);
           await saveSettingsToSheet(spreadsheetId);
-          setNotification({ type: 'success', message: 'Asetukset tallennettu (paikallisesti + sheet)' });
+          setNotification({ type: 'success', message: t('ui.savedLocallyAndSheet') });
         } catch (e) {
           console.error('[viikkoraha] Sheet sync failed:', e);
-          setNotification({ type: 'success', message: 'Asetukset tallennettu (vain paikallisesti)' });
+          setNotification({ type: 'success', message: t('ui.savedLocallyOnly') });
         }
       } else {
-        setNotification({ type: 'success', message: 'Asetukset tallennettu (paikallisesti)' });
+        setNotification({ type: 'success', message: t('ui.savedLocally') });
       }
     } finally {
       setSaving(false);
@@ -113,12 +116,12 @@ export default function SettingsPanel() {
     setErrors({});
     setSpreadsheetName('');
     setResetConfirm(false);
-    setNotification({ type: 'success', message: 'Kaikki tiedot nollattu' });
+    setNotification({ type: 'success', message: t('ui.allReset') });
   }
 
   function handleLogout() {
     logout();
-    setNotification({ type: 'success', message: 'Kirjauduttu ulos' });
+    setNotification({ type: 'success', message: t('ui.loggedOut') });
   }
 
   async function handlePromoteToParent() {
@@ -126,7 +129,7 @@ export default function SettingsPanel() {
     try {
       const email = user?.email;
       const name = user?.name;
-      if (!email) { setNotification({ type: 'error', message: 'Sähköposti puuttuu' }); return; }
+      if (!email) { setNotification({ type: 'error', message: t('ui.settings.emailMissing') }); return; }
       const users = await getUsers();
       const existingIdx = users.findIndex((u) => u.email === email);
       if (existingIdx >= 0) {
@@ -136,9 +139,9 @@ export default function SettingsPanel() {
       }
       await saveUsers(users);
       setRole(ROLES.PARENT);
-      setNotification({ type: 'success', message: 'Sinut on asetettu vanhemman rooliin ✓' });
+      setNotification({ type: 'success', message: t('ui.promotedToParent') });
     } catch (e) {
-      setNotification({ type: 'error', message: 'Roolin asetus epäonnistui: ' + (e.message || '') });
+      setNotification({ type: 'error', message: t('ui.settings.roleFailed') + ': ' + (e.message || '') });
     } finally {
       setPromoting(false);
     }
@@ -162,7 +165,7 @@ export default function SettingsPanel() {
           {user.imageUrl ? (
             <img
               src={user.imageUrl}
-              alt={user.name || 'Käyttäjä'}
+              alt={user.name || t('ui.unknownUser')}
               className="w-10 h-10 rounded-full border-2 border-blue-500"
               referrerPolicy="no-referrer"
               crossOrigin="anonymous"
@@ -174,13 +177,13 @@ export default function SettingsPanel() {
           )}
           <div className="min-w-0">
             <p className="text-white font-medium truncate">
-              {user.name || 'Käyttäjä'}
+              {user.name || t('ui.unknownUser')}
             </p>
             {user.email && (
               <p className="text-xs text-gray-400 truncate">{user.email}</p>
             )}
             <p className={`text-xs font-medium mt-0.5 ${isParent ? 'text-blue-400' : 'text-amber-400'}`}>
-              {isParent ? '👑 Vanhempi' : '🧒 Lapsi'}
+              {isParent ? `👑 ${t('ui.admin.users.roleParentShort')}` : `🧒 ${t('ui.admin.users.roleChildShort')}`}
             </p>
           </div>
         </div>
@@ -193,13 +196,13 @@ export default function SettingsPanel() {
             onClick={() => { closeSettings(); navigate('/admin/chores'); }}
             className="w-full bg-gray-700 hover:bg-gray-600 text-blue-400 font-semibold py-3 rounded-xl transition-colors"
           >
-            ⚙️ Hallinnoi askareita
+            {t('ui.settings.manageChores')}
           </button>
           <button
             onClick={() => { closeSettings(); navigate('/admin/users'); }}
             className="w-full bg-gray-700 hover:bg-gray-600 text-blue-400 font-semibold py-3 rounded-xl transition-colors"
           >
-            👥 Hallinnoi käyttäjiä
+            {t('ui.settings.manageUsers')}
           </button>
         </div>
       )}
@@ -211,7 +214,7 @@ export default function SettingsPanel() {
           disabled={promoting}
           className="w-full bg-amber-700 hover:bg-amber-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
         >
-          {promoting ? 'Asetetaan...' : '👑 Aseta vanhemman rooli'}
+          {promoting ? t('ui.settings.promoting') : t('ui.settings.promoteToParent')}
         </button>
       )}
 
@@ -221,9 +224,12 @@ export default function SettingsPanel() {
           onClick={handleLogout}
           className="w-full bg-gray-700 hover:bg-red-700 text-gray-300 hover:text-white font-semibold py-3 rounded-xl transition-colors"
         >
-          🔓 Kirjaudu ulos
+          {t('ui.settings.logout')}
         </button>
       )}
+
+      {/* Language switcher */}
+      <LanguageSwitcher />
 
       {/* Laskentataulukko */}
       <SpreadsheetPicker
@@ -245,7 +251,7 @@ export default function SettingsPanel() {
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
-          Edistyneet asetukset
+          {t('ui.settings.advancedSettings')}
         </button>
 
         {showAdvanced && (
@@ -258,13 +264,13 @@ export default function SettingsPanel() {
                 type="text"
                 value={form.clientId}
                 onChange={(e) => handleChange('clientId', e.target.value)}
-                placeholder="xxx.apps.googleusercontent.com (tyhjä = käytä oletusta)"
+                placeholder={t('ui.settings.clientIdPlaceholder')}
                 className={`w-full bg-gray-700 border rounded-lg px-3 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.clientId ? 'border-red-500' : 'border-gray-600'
                 }`}
               />
               <p className="text-xs text-gray-500 mt-1">
-                Vain jos käytät omaa Google Cloud -projektia
+                {t('ui.settings.ownProjectNote')}
               </p>
               {errors.clientId && (
                 <p className="text-xs text-red-400 mt-1">{errors.clientId}</p>
@@ -277,13 +283,13 @@ export default function SettingsPanel() {
                 type="text"
                 value={form.apiKey}
                 onChange={(e) => handleChange('apiKey', e.target.value)}
-                placeholder="AIzaSy... (tyhjä = käytä oletusta)"
+                placeholder={t('ui.settings.apiKeyPlaceholder')}
                 className={`w-full bg-gray-700 border rounded-lg px-3 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.apiKey ? 'border-red-500' : 'border-gray-600'
                 }`}
               />
               <p className="text-xs text-gray-500 mt-1">
-                Vain jos käytät omaa Google Cloud -projektia
+                {t('ui.settings.ownProjectNote')}
               </p>
               {errors.apiKey && (
                 <p className="text-xs text-red-400 mt-1">{errors.apiKey}</p>
@@ -299,7 +305,7 @@ export default function SettingsPanel() {
                   : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
               }`}
             >
-              {resetConfirm ? 'Vahvista nollaus' : 'Nollaa kaikki tiedot'}
+              {resetConfirm ? t('ui.settings.confirmReset') : t('ui.settings.resetAll')}
             </button>
           </div>
         )}
@@ -310,7 +316,7 @@ export default function SettingsPanel() {
         disabled={saving}
         className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
       >
-        {saving ? 'Tallennetaan...' : 'Tallenna'}
+        {saving ? t('ui.settings.saving') : t('ui.settings.save')}
       </button>
     </div>
   );

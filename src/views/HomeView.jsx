@@ -4,6 +4,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useChoresStore } from '../stores/choresStore';
 import { useGoogleAuth } from '../hooks/useGoogleAuth';
 import { useGoogleSheets } from '../hooks/useGoogleSheets';
+import { useTranslation } from '../i18n/useTranslation';
 import LoginPrompt from '../components/LoginPrompt';
 import OnboardingGuide from '../components/OnboardingGuide';
 import ChoreList from '../components/ChoreList';
@@ -11,6 +12,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import NotificationBar from '../components/NotificationBar';
 
 export default function HomeView() {
+  const { t } = useTranslation();
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
   const user = useAuthStore((s) => s.user);
   const { login, isLoading: authLoading, error: authError, gapiReady } = useGoogleAuth();
@@ -54,7 +56,7 @@ export default function HomeView() {
       await appendBooking(selectedChore.id, selectedChore.description, selectedChore.value);
       setNotification({ type: 'success', message: `Viikkorahaa lisätty: ${selectedChore.displayName}` });
     } catch {
-      setNotification({ type: 'error', message: 'Lisäys epäonnistui' });
+      setNotification({ type: 'error', message: t('ui.home.addFailed') });
     }
     setSelectedChore(null);
   }
@@ -97,17 +99,17 @@ export default function HomeView() {
       {!gapiReady || (!loaded.current && sheetsLoading) ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
           <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
-          <p className="text-gray-400 text-sm">Ladataan askareita...</p>
+          <p className="text-gray-400 text-sm">{t('ui.home.loading')}</p>
         </div>
       ) : sheetsError && !loaded.current ? (
         <div className="text-center py-16">
           <p className="text-red-400 mb-2">⚠️</p>
-          <p className="text-red-400 mb-3">Askareiden lataus epäonnistui</p>
+          <p className="text-red-400 mb-3">{t('ui.home.loadFailed')}</p>
           <button
             onClick={() => { loaded.current = false; setDismissedError(false); clearError?.(); loadChores(); }}
             className="text-blue-400 underline text-sm"
           >
-            Yritä uudelleen
+            {t('ui.home.retry')}
           </button>
         </div>
       ) : (

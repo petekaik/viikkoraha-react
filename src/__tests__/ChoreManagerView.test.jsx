@@ -11,6 +11,44 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
 }));
 
+// Mock useTranslation — return Finnish translations
+vi.mock('../i18n/useTranslation', () => ({
+  useTranslation: () => ({
+    t: (key, params) => {
+      const fi = {
+        'ui.admin.back': 'Takaisin',
+        'ui.admin.loginRequired': 'Kirjaudu sisään.',
+        'ui.admin.selectSpreadsheetFirst': 'Valitse taulukko ensin.',
+        'ui.admin.saveFailed': 'Tallennus epäonnistui.',
+        'ui.admin.deleteFailed': 'Poisto epäonnistui.',
+        'ui.admin.saving': 'Tallennetaan...',
+        'ui.admin.update': 'Päivitä',
+        'ui.admin.add': 'Lisää',
+        'ui.admin.cancel': 'Peru',
+        'ui.admin.delete': 'Poista',
+        'ui.admin.loading': 'Ladataan...',
+        'ui.admin.irreversible': 'Tätä ei voi perua.',
+        'ui.admin.choreManagement': 'Askareiden hallinta',
+        'ui.admin.newChore': 'Uusi askare',
+        'ui.admin.editingChore': `Muokataan: ${params?.name || ''}`,
+        'ui.admin.choreIdPlaceholder': 'ID (esim. imurointi)',
+        'ui.admin.choreDescriptionLabel': 'Kuvaus',
+        'ui.admin.choreDisplayNamePlaceholder': 'Näyttönimi (valinnainen)',
+        'ui.admin.choreValuePlaceholder': 'Arvo (€)',
+        'ui.admin.noChores': 'Ei askareita. Lisää ensimmäinen!',
+        'ui.admin.choreFormValidation': 'Täytä ID, kuvaus ja arvo (numero).',
+        'ui.admin.choreUpdated': 'Askare päivitetty.',
+        'ui.admin.choreAdded': 'Askare lisätty.',
+        'ui.admin.choreDeleted': `"${params?.name || ''}" poistettu.`,
+        'ui.admin.confirmDelete': `Poistetaanko "${params?.name || ''}"?`,
+      };
+      return fi[key] || key;
+    },
+    language: 'fi',
+    setLanguage: vi.fn(),
+  }),
+}));
+
 // Mock Google Sheets
 const mockGetChores = vi.fn();
 const mockAddChore = vi.fn();

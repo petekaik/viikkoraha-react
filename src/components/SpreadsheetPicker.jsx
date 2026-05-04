@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useGoogleSheets } from '../hooks/useGoogleSheets';
 import { isGapiReady, onGapiReady } from '../hooks/useGoogleAuth';
+import { useTranslation } from '../i18n/useTranslation';
 
 /**
  * Dropdown picker for selecting a Google Sheet.
@@ -13,6 +14,7 @@ import { isGapiReady, onGapiReady } from '../hooks/useGoogleAuth';
  *   isSignedIn — boolean, whether user is authenticated
  */
 export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
+  const { t } = useTranslation();
   const { listSpreadsheets, createNewSpreadsheet, validateSpreadsheet, initSheets } =
     useGoogleSheets();
 
@@ -43,7 +45,7 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
       setSheets(files);
       setLoadedOnce(true);
     } catch (e) {
-      setError(e?.result?.error?.message || e.message || 'Spreadsheet-listaus epäonnistui');
+      setError(e?.result?.error?.message || e.message || t('ui.spreadsheet.listFailed'));
     } finally {
       setLoading(false);
     }
@@ -82,7 +84,7 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
     if (match) {
       runValidation(id);
     } else {
-      setValidation({ valid: false, missing: [], name: '?', error: 'Tunniste ei vastaa mitään tunnettua taulukkoa' });
+      setValidation({ valid: false, missing: [], name: '?', error: t('ui.spreadsheet.invalid') });
     }
   }
 
@@ -99,7 +101,7 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
         await load();
       }
     } catch (e) {
-      setError(e?.result?.error?.message || e.message || 'Luonti epäonnistui');
+      setError(e?.result?.error?.message || e.message || t('ui.spreadsheet.createFailed'));
     } finally {
       setCreating(false);
     }
@@ -113,7 +115,7 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
       await initSheets();
       await runValidation(selected);
     } catch (e) {
-      setError(e?.result?.error?.message || e.message || 'Korjaus epäonnistui');
+      setError(e?.result?.error?.message || e.message || t('ui.spreadsheet.fixFailed'));
     } finally {
       setCreating(false);
     }
@@ -134,8 +136,8 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
         <div className="flex items-center gap-3 bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-3">
           <div className="w-5 h-5 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
           <p className="text-sm text-gray-400">
-            {!isSignedIn ? 'Kirjaudu sisään nähdäksesi laskentataulukot' :
-             !gapiReady ? 'Yhdistetään Google API:in...' :
+            {!isSignedIn ? t('ui.spreadsheet.loginPrompt') :
+             !gapiReady ? t('ui.spreadsheet.connecting') :
              'Ladataan laskentataulukoita...'}
           </p>
         </div>
@@ -180,7 +182,7 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
             disabled={creating}
             className="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 rounded-md text-white text-xs font-medium transition-colors"
           >
-            {creating ? 'Korjataan...' : 'Lisää puuttuvat välilehdet'}
+            {creating ? t('ui.spreadsheet.fixing') : t('ui.spreadsheet.fixSheets')}
           </button>
         </div>
       )}
