@@ -16,14 +16,22 @@ export function useTranslation() {
   const setLanguage = useLanguageStore((s) => s.setLanguage);
 
   const t = useCallback(
-    (path) => {
+    (path, params) => {
       const keys = path.split('.');
       let val = translations[language];
       for (const k of keys) {
         if (val == null) return path;
         val = val[k];
       }
-      return val ?? path;
+      if (val == null) return path;
+      if (params) {
+        let result = val;
+        for (const [key, value] of Object.entries(params)) {
+          result = result.replaceAll(`{${key}}`, value);
+        }
+        return result;
+      }
+      return val;
     },
     [language],
   );

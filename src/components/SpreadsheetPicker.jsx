@@ -129,7 +129,7 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-300">
-        Laskentataulukko
+        {t('ui.spreadsheet.label')}
       </label>
 
       {isBusy ? (
@@ -138,7 +138,7 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
           <p className="text-sm text-gray-400">
             {!isSignedIn ? t('ui.spreadsheet.loginPrompt') :
              !gapiReady ? t('ui.spreadsheet.connecting') :
-             'Ladataan laskentataulukoita...'}
+             t('ui.spreadsheet.loadingSheets')}
           </p>
         </div>
       ) : (
@@ -152,7 +152,7 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
             }`}
           >
             <option value="">
-              {noSheetsYet ? '-- Ei laskentataulukoita — luo uusi --' : '-- Valitse laskentataulukko --'}
+              {noSheetsYet ? t('ui.spreadsheet.noSheetsPrompt') : t('ui.spreadsheet.selectPrompt')}
             </option>
             {sheets.map(s => (
               <option key={s.id} value={s.id}>
@@ -166,17 +166,17 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
             disabled={creating}
             className="sm:w-auto w-full px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-white text-sm font-medium transition-colors shrink-0"
           >
-            {creating ? 'Luodaan...' : 'Luo uusi'}
+            {creating ? t('ui.spreadsheet.creating') : t('ui.spreadsheet.createNew')}
           </button>
         </div>
       )}
 
       {/* Validation feedback */}
-      {validating && <p className="text-xs text-gray-400">Tarkistetaan rakennetta...</p>}
+      {validating && <p className="text-xs text-gray-400">{t('ui.spreadsheet.verifying')}</p>}
 
       {needsFix && (
         <div className="bg-amber-900/40 border border-amber-700 rounded-lg p-3 text-sm">
-          <p className="text-amber-300 mb-2">Puuttuu: {validation.missing.join(', ')}</p>
+          <p className="text-amber-300 mb-2">{t('ui.spreadsheet.missingSheets', { sheets: validation.missing.join(', ') })}</p>
           <button
             onClick={handleAutoFix}
             disabled={creating}
@@ -189,7 +189,7 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
 
       {validation?.valid && !isBusy && (
         <p className="text-xs text-emerald-400">
-          ✅ "{validation.name}" — rakenne kunnossa
+          {t('ui.spreadsheet.structureOk', { name: validation.name })}
         </p>
       )}
 
@@ -197,7 +197,7 @@ export default function SpreadsheetPicker({ value, onChange, isSignedIn }) {
       {error && <p className="text-xs text-red-400">{error}</p>}
 
       <p className="text-xs text-gray-500">
-        Valitse taulukko tai luo uusi. Sovellus tarkistaa rakenteen automaattisesti.
+        {t('ui.spreadsheet.helpText')}
       </p>
     </div>
   );

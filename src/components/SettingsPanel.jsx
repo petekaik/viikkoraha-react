@@ -278,7 +278,7 @@ export default function SettingsPanel() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">API-avain</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1">{t('ui.settings.apiKeyLabel')}</label>
               <input
                 type="text"
                 value={form.apiKey}
