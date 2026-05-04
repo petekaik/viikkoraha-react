@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from '../i18n/useTranslation';
 
 export default function ConfirmDialog({ chore, user, onConfirm, onCancel }) {
+  const { t } = useTranslation();
   const cancelRef = useRef(null);
 
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { useTranslation } from '../i18n/useTranslation';
 export default function LoginPrompt({ onLogin, isLoading, error }) {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-[80vh] items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-2xl bg-gray-800 p-8 text-center shadow-xl">
