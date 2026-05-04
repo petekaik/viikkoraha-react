@@ -15,5 +15,11 @@ jobs:
         with:
           node-version: 22
           cache: 'npm'
+
       - run: npm ci
+
+      # Inject secrets as Vite env vars so settingsStore defaults work in tests
       - run: npm test
+        env:
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID || '' }}
+          VITE_GOOGLE_API_KEY: ${{ secrets.VITE_GOOGLE_API_KEY || '' }}

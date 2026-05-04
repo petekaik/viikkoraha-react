@@ -1,15 +1,38 @@
 #!/usr/bin/env bash
 # Viikkoraha — Deploy GitHub Pagesiin
 #
-# 1. Aja testit
-# 2. Buildaa
-# 3. Kopioi dist/ → petekaik.github.io-repon viikkoraha/-hakemistoon
-# 4. Commit + push petekaik.github.io
+# 1. Varmista .env-tiedosto (tarvitaan VITE_GOOGLE_CLIENT_ID / VITE_GOOGLE_API_KEY)
+# 2. Aja testit
+# 3. Buildaa (Vite lukee .env automaattisesti)
+# 4. Kopioi dist/ → petekaik.github.io-repon viikkoraha/-hakemistoon
+# 5. Commit + push petekaik.github.io
 #
-# Käyttö: ./scripts/deploy.sh
+# Käyttö: ./scripts/deploy.sh [--env-file=.env.production]
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
+
+ENV_FILE=".env"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --env-file=*) ENV_FILE="${1#*=}"; shift ;;
+        --env-file)   ENV_FILE="$2"; shift 2 ;;
+        *) echo "❌ Tuntematon argumentti: $1"; exit 1 ;;
+    esac
+done
+
+if [ ! -f "$ENV_FILE" ]; then
+    echo "❌ $ENV_FILE puuttuu. Luo se .env.example-pohjasta tai anna --env-file=<polku>."
+    echo "   cp .env.example .env   # ja täytä VITE_GOOGLE_CLIENT_ID + VITE_GOOGLE_API_KEY"
+    exit 1
+fi
+
+# Tarkista, että vaaditut muuttujat löytyvät
+MISSING=0
+grep -qE '^VITE_GOOGLE_CLIENT_ID=.+' "$ENV_FILE" || { echo "❌ $ENV_FILE: VITE_GOOGLE_CLIENT_ID puuttuu tai on tyhjä."; MISSING=1; }
+grep -qE '^VITE_GOOGLE_API_KEY=.+' "$ENV_FILE" || { echo "❌ $ENV_FILE: VITE_GOOGLE_API_KEY puuttuu tai on tyhjä."; MISSING=1; }
+[ "$MISSING" -eq 1 ] && exit 1
 
 PAGES_DIR="${PAGES_DIR:-$HOME/projects/petekaik.github.io}"
 DEPLOY_PATH="$PAGES_DIR/viikkoraha"
