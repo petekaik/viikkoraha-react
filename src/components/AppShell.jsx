@@ -24,9 +24,9 @@ export default function AppShell({ children }) {
 
   return (
     <AppContext.Provider value={contextValue}>
-      <div className="min-h-screen max-w-lg mx-auto relative">
+      <div className="flex flex-col h-[100dvh] max-w-lg mx-auto relative">
         {/* Header */}
-        <header className="sticky top-0 z-40 bg-gray-900/95 backdrop-blur border-b border-gray-800">
+        <header className="flex-shrink-0 z-40 bg-gray-900/95 backdrop-blur border-b border-gray-800">
           <div className="flex items-center justify-between px-4 h-14">
             <button
               onClick={() => setShowSettings(!showSettings)}
@@ -85,7 +85,7 @@ export default function AppShell({ children }) {
         )}
 
         {/* Main content */}
-        <main className="pb-8">
+        <main className="flex-1 min-h-0 pb-8">
           {children}
         </main>
       </div>

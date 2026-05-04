@@ -174,8 +174,7 @@ export default function DashboardView() {
   return (
     <div
       ref={containerRef}
-      className="overflow-y-auto"
-      style={{ height: 'calc(100vh - 56px)' }}
+      className="h-full overflow-y-auto"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
