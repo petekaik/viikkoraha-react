@@ -1,10 +1,9 @@
-import { useEffect, useCallback, useState, useRef } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import {
   ensureSettingsSheet,
   loadSettingsFromSheet,
-  saveSettingsToSheet,
 } from '../utils/settingsSync';
 import { getDisplayName } from '../utils/displayName';
 import { USERS_RANGE, ROLES } from '../utils/sheets-schema';
@@ -25,7 +24,8 @@ function isTokenExpired(token) {
   if (!token) return true;
   const payload = parseJwt(token);
   if (!payload?.exp) return false;
-  return Date.now() >= payload.exp * 1000;
+  // Add 30-second grace period to avoid edge cases
+  return Date.now() >= (payload.exp * 1000) - 30_000;
 }
 
 // ── Script loader ──
@@ -106,19 +106,58 @@ async function initGapiClient(apiKey, token) {
 }
 
 function isGapiReady() {
-  // Drive API käyttää suoraa fetch(), ei tarvita gapi.client.drive -clienttiä
   return gapiInitialized && !!window.gapi?.client?.sheets;
+}
+
+// ── Silent token refresh ──
+
+/**
+ * Attempt to get a fresh access token without showing a consent dialog.
+ * Uses prompt:'' — Google returns a new token silently if the user has
+ * already granted consent for *all* requested scopes.
+ *
+ * Returns the new access token string, or null if silent refresh failed.
+ */
+function silentRefresh(clientId) {
+  return new Promise((resolve) => {
+    if (!window.google?.accounts?.oauth2) {
+      console.warn('[viikkoraha] silentRefresh: GIS not loaded');
+      return resolve(null);
+    }
+
+    const tokenClient = window.google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: 'profile email https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly',
+      prompt: '', // silent — no dialog
+      callback: (tokenResponse) => {
+        if (tokenResponse.error) {
+          console.log('[viikkoraha] silentRefresh failed:', tokenResponse.error);
+          resolve(null);
+        } else {
+          console.log('[viikkoraha] silentRefresh succeeded');
+          resolve(tokenResponse.access_token);
+        }
+      },
+    });
+
+    // Short timeout — if silent refresh blocks on a hidden iframe, bail fast
+    const timeout = setTimeout(() => {
+      console.warn('[viikkoraha] silentRefresh timed out');
+      resolve(null);
+    }, 4000);
+
+    tokenClient.requestAccessToken();
+
+    // If the callback fires synchronously (token already cached), clear timeout
+    // This is a best-effort; the 4s timeout is the safety net.
+    const origCallback = tokenClient.callback;
+    // We can't easily intercept the callback here, but the timeout handles it.
+  });
 }
 
 // ── Role resolution ──
 
-/**
- * Look up the current user's role from the Users sheet (by email).
- * If the user is not found, defaults to CHILD.
- */
 async function resolveUserRole(spreadsheetId, email) {
-  // If we don't have an email yet (token lacks email scope), don't
-  // set a default role — let the user see the promote button in settings.
   if (!email || !spreadsheetId) return;
   try {
     const res = await window.gapi.client.sheets.spreadsheets.values.get({
@@ -133,10 +172,31 @@ async function resolveUserRole(spreadsheetId, email) {
       const role = userRow[2] === ROLES.PARENT ? ROLES.PARENT : ROLES.CHILD;
       useAuthStore.getState().setRole(role);
     }
-    // If users sheet exists but user not found → role stays null (new user)
   } catch {
     // Sheet doesn't exist yet — leave role null
   }
+}
+
+// ── Helper: fetch userinfo + set user ──
+
+async function fetchAndSetUser(token) {
+  try {
+    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      const profile = await res.json();
+      useAuthStore.getState().setUser({
+        name: getDisplayName(profile),
+        email: profile.email || '',
+        imageUrl: profile.picture || '',
+      });
+      return;
+    }
+  } catch (e) {
+    console.warn('[viikkoraha] Userinfo fetch failed:', e.message);
+  }
+  useAuthStore.getState().setUser({ name: 'Käyttäjä', email: '', imageUrl: '' });
 }
 
 // ── useGoogleAuth hook ──
@@ -176,33 +236,27 @@ export function useGoogleAuth() {
 
       if (authState.accessToken) {
         if (isTokenExpired(authState.accessToken)) {
-          console.log('[viikkoraha] Stored token expired, clearing');
-          useAuthStore.getState().signOut();
-          setIsLoadingLocal(false);
-          return;
+          console.log('[viikkoraha] Stored token expired, attempting silent refresh');
+          const cid = useSettingsStore.getState().clientId;
+          if (cid) {
+            const newToken = await silentRefresh(cid);
+            if (newToken) {
+              useAuthStore.getState().setToken(newToken);
+              authState.accessToken = newToken;
+              useAuthStore.getState().isSignedIn = true;
+            }
+          }
         }
+      }
+
+      if (authState.accessToken && !isTokenExpired(authState.accessToken)) {
         try {
           const sid = useSettingsStore.getState().spreadsheetId;
           await initGapiClient(useSettingsStore.getState().apiKey, authState.accessToken);
           if (!cancelled) setGapiReady(true);
 
-          // Always fetch fresh userinfo on restore — ensures name/picture
-          // are up to date even after scope changes (e.g. adding openid).
-          try {
-            const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-              headers: { Authorization: `Bearer ${authState.accessToken}` },
-            });
-            if (userRes.ok) {
-              const profile = await userRes.json();
-              useAuthStore.getState().setUser({
-                name: getDisplayName(profile),
-                email: profile.email || '',
-                imageUrl: profile.picture || '',
-              });
-            }
-          } catch (e) {
-            console.warn('[viikkoraha] Userinfo fetch on restore failed:', e.message);
-          }
+          // Always fetch fresh userinfo on restore
+          await fetchAndSetUser(authState.accessToken);
 
           // Auto-load settings from sheet on restore
           if (sid) {
@@ -216,6 +270,13 @@ export function useGoogleAuth() {
         } catch (e) {
           console.error('[viikkoraha] GAPI session-restore init failed:', e);
         }
+      }
+
+      // If after all attempts we still have no valid token, sign out
+      const finalState = useAuthStore.getState();
+      if (finalState.accessToken && isTokenExpired(finalState.accessToken)) {
+        console.log('[viikkoraha] Token still expired after refresh attempt, signing out');
+        useAuthStore.getState().signOut();
       }
 
       setIsLoadingLocal(false);
@@ -253,23 +314,7 @@ export function useGoogleAuth() {
         const token = tokenResponse.access_token;
         setToken(token);
 
-        try {
-          const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (res.ok) {
-            const profile = await res.json();
-            setUser({
-              name: getDisplayName(profile),
-              email: profile.email || '',
-              imageUrl: profile.picture || '',
-            });
-          } else {
-            setUser({ name: 'Käyttäjä', email: '', imageUrl: '' });
-          }
-        } catch {
-          setUser({ name: 'Käyttäjä', email: '', imageUrl: '' });
-        }
+        await fetchAndSetUser(token);
 
         try {
           await initGapiClient(apiKey, token);
@@ -293,10 +338,9 @@ export function useGoogleAuth() {
       },
     });
 
-    // prompt: 'consent' vaaditaan incremental authiin — Google näyttää consent-näkymän
-    // jossa KAIKKI pyydetyt scopet (vanhat + uudet) näkyvät. Ilman tätä uusia scopeja
-    // (esim. drive.readonly) ei koskaan lisätä tokeniin.
-    tokenClient.requestAccessToken({ prompt: 'consent' });
+    // No prompt: — Google shows dialog only if consent hasn't been granted,
+    // otherwise uses cached consent. Avoids the double-login bug.
+    tokenClient.requestAccessToken();
   }, [clientId, apiKey]);
 
   const logout = useCallback(() => {
@@ -315,4 +359,4 @@ export function useGoogleAuth() {
   };
 }
 
-export { isGapiReady, onGapiReady };
+export { isGapiReady, onGapiReady, silentRefresh };

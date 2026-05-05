@@ -6,7 +6,7 @@ import {
   CHORES_RANGE, BOOKINGS_RANGE, SUMS_RANGE, SETTINGS_RANGE, getDefaultChores,
   USERS_HEADERS,
 } from '../utils/sheets-schema';
-import { isGapiReady } from './useGoogleAuth';
+import { isGapiReady, silentRefresh } from './useGoogleAuth';
 import { parseFinnishNumber } from '../utils/parseNumber';
 
 import { getISOWeek } from '../utils/dateUtils';
@@ -35,6 +35,20 @@ export function useGoogleSheets() {
     } catch (err) {
       const status = err?.status || err?.code;
       if (status === 401 || status === 403) {
+        // Try silent refresh before giving up — the token may have just expired
+        const cid = useSettingsStore.getState().clientId;
+        if (cid) {
+          const newToken = await silentRefresh(cid);
+          if (newToken) {
+            useAuthStore.getState().setToken(newToken);
+            window.gapi.client.setToken({ access_token: newToken });
+            try {
+              return await fn();
+            } catch (retryErr) {
+              console.error('[viikkoraha] Retry after silent refresh also failed:', retryErr);
+            }
+          }
+        }
         const authMsg = 'Istunto vanhentui. Kirjaudu uudelleen.';
         setError(authMsg);
         useAuthStore.getState().signOut();
