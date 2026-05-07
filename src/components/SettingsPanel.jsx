@@ -12,6 +12,14 @@ import { useTranslation } from '../i18n/useTranslation';
 import NotificationBar from './NotificationBar';
 import SpreadsheetPicker from './SpreadsheetPicker';
 import LanguageSwitcher from './LanguageSwitcher';
+import pkg from '../../package.json' assert { type: 'json' };
+
+const APP_VERSION = pkg.version;
+const BUILD_ID_KEY = 'viikkoraha-last-build-id';
+const buildId = (() => {
+  try { return localStorage.getItem(BUILD_ID_KEY) || '-'; }
+  catch { return '-'; }
+})();
 
 export default function SettingsPanel() {
   const { t } = useTranslation();
@@ -277,7 +285,7 @@ export default function SettingsPanel() {
       {/* Info */}
       <div className="border-t border-gray-700 pt-4">
         <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">{t('ui.settings.info')}</p>
-        <div className="space-y-1">
+        <div className="space-y-1 mb-3">
           <a
             href="docs/privacy.html"
             target="_blank"
@@ -295,6 +303,9 @@ export default function SettingsPanel() {
             {t('ui.settings.terms')}
           </a>
         </div>
+        <p className="text-xs text-gray-600">
+          v{APP_VERSION} — {buildId}
+        </p>
       </div>
 
       <button
