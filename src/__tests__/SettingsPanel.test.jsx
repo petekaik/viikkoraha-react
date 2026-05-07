@@ -19,12 +19,15 @@ vi.mock('../i18n/useTranslation', () => ({
     t: (key, params) => {
       const fi = {
         'ui.unknownUser': 'Käyttäjä',
+        'ui.settings.title': 'Asetukset',
         'ui.settings.logout': '🔓 Kirjaudu ulos',
         'ui.settings.save': 'Tallenna',
         'ui.settings.saving': 'Tallennetaan...',
         'ui.settings.advancedSettings': 'Edistyneet asetukset',
         'ui.settings.manageChores': '⚙️ Hallinnoi askareita',
         'ui.settings.manageUsers': '👥 Hallinnoi käyttäjiä',
+        'ui.settings.management': 'Hallinta',
+        'ui.settings.closeSettings': 'Sulje asetukset',
         'ui.settings.resetAll': 'Nollaa kaikki tiedot',
         'ui.settings.confirmReset': 'Vahvista nollaus',
         'ui.settings.clientIdPlaceholder': 'xxx.apps.googleusercontent.com (tyhjä = käytä oletusta)',
@@ -33,6 +36,9 @@ vi.mock('../i18n/useTranslation', () => ({
         'ui.settings.language': 'Kieli',
         'ui.admin.users.roleParentShort': 'vanhempi',
         'ui.admin.users.roleChildShort': 'lapsi',
+        'ui.settings.info': 'Info',
+        'ui.settings.privacy': 'Tietosuojaseloste',
+        'ui.settings.terms': 'Käyttöehdot',
       };
       return fi[key] || key;
     },
@@ -66,6 +72,7 @@ describe('SettingsPanel profile section', () => {
       isSignedIn: false,
       user: null,
       accessToken: null,
+      role: 'child',
     });
     useSettingsStore.setState({
       clientId: '',
@@ -88,6 +95,7 @@ describe('SettingsPanel profile section', () => {
         imageUrl: 'https://example.com/photo.jpg',
       },
       accessToken: 'fake-token',
+      role: 'child',
     });
     render(<SettingsPanel />);
     expect(screen.getByText('Matti Meikäläinen')).toBeInTheDocument();
@@ -104,6 +112,7 @@ describe('SettingsPanel profile section', () => {
         imageUrl: '',
       },
       accessToken: 'fake-token',
+      role: 'child',
     });
     render(<SettingsPanel />);
     expect(screen.getByText('Matti')).toBeInTheDocument();
@@ -115,6 +124,7 @@ describe('SettingsPanel profile section', () => {
       isSignedIn: true,
       user: { name: '', email: '', imageUrl: '' },
       accessToken: 'fake-token',
+      role: 'child',
     });
     render(<SettingsPanel />);
     expect(screen.getByText('Käyttäjä')).toBeInTheDocument();
@@ -125,8 +135,35 @@ describe('SettingsPanel profile section', () => {
       isSignedIn: true,
       user: { name: 'Matti', email: '', imageUrl: '' },
       accessToken: 'fake-token',
+      role: 'child',
     });
     render(<SettingsPanel />);
     expect(screen.getByText('🔓 Kirjaudu ulos')).toBeInTheDocument();
+  });
+
+  it('does not show management segment when signed in as child', () => {
+    useAuthStore.setState({
+      isSignedIn: true,
+      user: { name: 'Matti', email: '', imageUrl: '' },
+      accessToken: 'fake-token',
+      role: 'child',
+    });
+    render(<SettingsPanel />);
+    expect(screen.queryByText('⚙️ Hallinnoi askareita')).toBeFalsy();
+    expect(screen.queryByText('👥 Hallinnoi käyttäjiä')).toBeFalsy();
+    expect(screen.queryByText('Hallinta')).toBeFalsy();
+  });
+
+  it('shows management segment when signed in as parent', () => {
+    useAuthStore.setState({
+      isSignedIn: true,
+      user: { name: 'Pomo', email: 'pomo@example.com', imageUrl: '' },
+      accessToken: 'fake-token',
+      role: 'parent',
+    });
+    render(<SettingsPanel />);
+    expect(screen.getByText('⚙️ Hallinnoi askareita')).toBeInTheDocument();
+    expect(screen.getByText('👥 Hallinnoi käyttäjiä')).toBeInTheDocument();
+    expect(screen.getByText('Hallinta')).toBeInTheDocument();
   });
 });

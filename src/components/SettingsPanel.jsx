@@ -141,6 +141,36 @@ export default function SettingsPanel() {
         />
       )}
 
+      {/* ═══ Yläpalkki: tallenna + sulje ═══ */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-gray-300">{t('ui.settings.title')}</h2>
+        <div className="flex gap-2">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-800 hover:bg-blue-700 disabled:opacity-40 text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-blue-500"
+            aria-label={t('ui.settings.save')}
+          >
+            {saving ? (
+              <div className="w-4 h-4 border-2 border-gray-400/30 border-t-gray-400 rounded-full animate-spin" />
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </button>
+          <button
+            onClick={closeSettings}
+            className="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-blue-500"
+            aria-label={t('ui.settings.closeSettings')}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
       {/* Profiili */}
       {isSignedIn && user && (
         <div className="flex items-center gap-3 bg-gray-800 rounded-xl p-4">
@@ -171,24 +201,6 @@ export default function SettingsPanel() {
         </div>
       )}
 
-      {/* Admin-linkit — vain parent */}
-      {isSignedIn && isParent && (
-        <div className="space-y-2">
-          <button
-            onClick={() => { closeSettings(); navigate('/admin/chores'); }}
-            className="w-full bg-gray-700 hover:bg-gray-600 text-blue-400 font-semibold py-3 rounded-xl transition-colors"
-          >
-            {t('ui.settings.manageChores')}
-          </button>
-          <button
-            onClick={() => { closeSettings(); navigate('/admin/users'); }}
-            className="w-full bg-gray-700 hover:bg-gray-600 text-blue-400 font-semibold py-3 rounded-xl transition-colors"
-          >
-            {t('ui.settings.manageUsers')}
-          </button>
-        </div>
-      )}
-
       {/* Kirjaudu ulos */}
       {isSignedIn && (
         <button
@@ -208,6 +220,27 @@ export default function SettingsPanel() {
         onChange={handleSpreadsheetChange}
         isSignedIn={isSignedIn}
       />
+
+      {/* Hallinta — vain parent */}
+      {isSignedIn && isParent && (
+        <div>
+          <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">{t('ui.settings.management')}</p>
+          <div className="space-y-2">
+            <button
+              onClick={() => { closeSettings(); navigate('/admin/chores'); }}
+              className="w-full bg-gray-700 hover:bg-gray-600 text-blue-400 font-semibold py-3 rounded-xl transition-colors"
+            >
+              {t('ui.settings.manageChores')}
+            </button>
+            <button
+              onClick={() => { closeSettings(); navigate('/admin/users'); }}
+              className="w-full bg-gray-700 hover:bg-gray-600 text-blue-400 font-semibold py-3 rounded-xl transition-colors"
+            >
+              {t('ui.settings.manageUsers')}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Edistyneet asetukset */}
       <div>
@@ -307,14 +340,6 @@ export default function SettingsPanel() {
           v{APP_VERSION} — {buildId}
         </p>
       </div>
-
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
-      >
-        {saving ? t('ui.settings.saving') : t('ui.settings.save')}
-      </button>
     </div>
   );
 }
