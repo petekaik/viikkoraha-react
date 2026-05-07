@@ -259,6 +259,7 @@ export default function DashboardView() {
                 onReject={isParent ? handleReject : undefined}
                 onUnpay={isParent ? handleUnpay : undefined}
                 onDelete={isParent ? handleDelete : undefined}
+                isParent={isParent}
                 userName={user?.name}
               />
             )}

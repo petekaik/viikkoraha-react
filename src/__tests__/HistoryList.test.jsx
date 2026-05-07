@@ -15,6 +15,7 @@ vi.mock('../i18n/useTranslation', () => ({
         'ui.status.paid': 'maksettu',
         'ui.status.rejected': 'hylätty',
         'ui.statusLong.rejected': 'Hylätty',
+        'ui.status.pendingParent': 'odottaa vanhemman hyväksyntää',
         'ui.actions.approve': '✅ Hyväksy',
         'ui.actions.reject': '❌ Hylkää',
         'ui.actions.backToPending': '⏪ Palauta',
@@ -73,7 +74,7 @@ describe('HistoryList', () => {
   it('expands item on click and shows approve button', async () => {
     const onApprove = vi.fn();
     render(
-      <HistoryList bookings={bookings} onApprove={onApprove} onReject={vi.fn()} onUnpay={vi.fn()} />
+      <HistoryList bookings={bookings} onApprove={onApprove} onReject={vi.fn()} onUnpay={vi.fn()} isParent={true} />
     );
 
     // Click the pending item to expand
@@ -86,6 +87,18 @@ describe('HistoryList', () => {
 
     await userEvent.click(approveBtn);
     expect(onApprove).toHaveBeenCalledWith(1);
+  });
+
+  it('shows pendingParent text instead of buttons when not parent', async () => {
+    render(
+      <HistoryList bookings={bookings} isParent={false} />
+    );
+
+    const pendingRow = screen.getByText('Tiskaus').closest('[role="button"]');
+    await userEvent.click(pendingRow);
+
+    expect(screen.getByText('odottaa vanhemman hyväksyntää')).toBeInTheDocument();
+    expect(screen.queryByText('✅ Hyväksy')).not.toBeInTheDocument();
   });
 
   it('renders both status badges', () => {

@@ -35,6 +35,22 @@ describe('HistoryItem', () => {
     expect(screen.getByText('maksettu')).toBeInTheDocument();
   });
 
+  it('shows pendingParent text for pending items when not parent', () => {
+    const booking = {
+      timestamp: '2026-05-01T10:00:00Z',
+      choreId: 'siivous',
+      description: 'Siivous',
+      value: 2,
+      status: 'pending',
+      userName: 'Matti',
+      rowIndex: 3,
+    };
+    render(<HistoryItem booking={booking} isExpanded={true} isParent={false} />);
+    expect(screen.getByText('odottaa vanhemman hyväksyntää')).toBeInTheDocument();
+    // Toimintonapit EI näy
+    expect(screen.queryByText('✅ Hyväksy')).not.toBeInTheDocument();
+  });
+
   it('expands on click and shows approve/reject buttons for pending', async () => {
     const onApprove = vi.fn();
     const onReject = vi.fn();
@@ -48,7 +64,7 @@ describe('HistoryItem', () => {
       rowIndex: 3,
     };
     const { rerender } = render(
-      <HistoryItem booking={booking} onApprove={onApprove} onReject={onReject} />
+      <HistoryItem booking={booking} onApprove={onApprove} onReject={onReject} isParent={true} />
     );
 
     // Click to expand
@@ -62,6 +78,7 @@ describe('HistoryItem', () => {
         onApprove={onApprove}
         onReject={onReject}
         isExpanded={true}
+        isParent={true}
       />
     );
 
@@ -84,12 +101,12 @@ describe('HistoryItem', () => {
       approvedBy: 'Pomo',
       approvedAt: '2026-05-02T12:00:00Z',
     };
-    const { rerender } = render(<HistoryItem booking={booking} onUnpay={onUnpay} />);
+    const { rerender } = render(<HistoryItem booking={booking} onUnpay={onUnpay} isParent={true} />);
 
     const row = screen.getByText('Siivous').closest('[role="button"]');
     await userEvent.click(row);
 
-    rerender(<HistoryItem booking={booking} onUnpay={onUnpay} isExpanded={true} />);
+    rerender(<HistoryItem booking={booking} onUnpay={onUnpay} isExpanded={true} isParent={true} />);
 
     const unpayBtn = screen.getByText('↩️ Palauta odottavaksi');
     await userEvent.click(unpayBtn);
@@ -109,12 +126,12 @@ describe('HistoryItem', () => {
       approvedBy: 'Pomo',
       approvedAt: '2026-05-02T12:00:00Z',
     };
-    const { rerender } = render(<HistoryItem booking={booking} onUnpay={onUnpay} />);
+    const { rerender } = render(<HistoryItem booking={booking} onUnpay={onUnpay} isParent={true} />);
 
     const row = screen.getByText('Siivous').closest('[role="button"]');
     await userEvent.click(row);
 
-    rerender(<HistoryItem booking={booking} onUnpay={onUnpay} isExpanded={true} />);
+    rerender(<HistoryItem booking={booking} onUnpay={onUnpay} isExpanded={true} isParent={true} />);
 
     const unpayBtn = screen.getByText('↩️ Palauta odottavaksi');
     await userEvent.click(unpayBtn);
@@ -134,12 +151,12 @@ describe('HistoryItem', () => {
       approvedBy: 'Pomo',
       approvedAt: '2026-05-02T12:00:00Z',
     };
-    const { rerender } = render(<HistoryItem booking={booking} onApprove={onApprove} />);
+    const { rerender } = render(<HistoryItem booking={booking} onApprove={onApprove} isParent={true} />);
 
     const row = screen.getByText('Siivous').closest('[role="button"]');
     await userEvent.click(row);
 
-    rerender(<HistoryItem booking={booking} onApprove={onApprove} isExpanded={true} />);
+    rerender(<HistoryItem booking={booking} onApprove={onApprove} isExpanded={true} isParent={true} />);
 
     const approveBtn = screen.getByText('✅ Hyväksy');
     await userEvent.click(approveBtn);

@@ -6,6 +6,7 @@ export default function HistoryItem({
   onReject,
   onUnpay,
   onDelete,
+  isParent,
   onToggleExpand,
   isExpanded,
 }) {
@@ -89,8 +90,8 @@ export default function HistoryItem({
             </p>
           )}
 
-          {/* Pending: → paid or rejected */}
-          {isPending && (
+          {/* Pending: → paid or rejected (vaatii parent-roolin) */}
+          {isPending && isParent && (
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={(e) => { e.stopPropagation(); onApprove?.(booking.rowIndex); }}
@@ -107,8 +108,13 @@ export default function HistoryItem({
             </div>
           )}
 
-          {/* Paid: → pending or rejected */}
-          {isPaid && (
+          {/* Pending lapsen näkymässä: vain tila */}
+          {isPending && !isParent && (
+            <p className="text-xs text-gray-500 italic">{t('ui.status.pendingParent')}</p>
+          )}
+
+          {/* Paid: → pending or rejected (vaatii parent-roolin) */}
+          {isPaid && isParent && (
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={(e) => { e.stopPropagation(); onUnpay?.(booking.rowIndex); }}
@@ -125,8 +131,8 @@ export default function HistoryItem({
             </div>
           )}
 
-          {/* Rejected: → paid or pending */}
-          {isRejected && (
+          {/* Rejected: → paid or pending (vaatii parent-roolin) */}
+          {isRejected && isParent && (
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={(e) => { e.stopPropagation(); onApprove?.(booking.rowIndex); }}

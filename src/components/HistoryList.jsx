@@ -4,7 +4,7 @@ import { getISOWeek, formatWeekLabel } from '../utils/dateUtils';
 import { useLanguageStore } from '../stores/languageStore';
 import { useTranslation } from '../i18n/useTranslation';
 
-export default function HistoryList({ bookings, onApprove, onReject, onUnpay, onDelete, userName }) {
+export default function HistoryList({ bookings, onApprove, onReject, onUnpay, onDelete, isParent, userName }) {
   const [expandedItem, setExpandedItem] = useState(null);
   const { t } = useTranslation();
   const lang = useLanguageStore((s) => s.language);
@@ -54,6 +54,7 @@ export default function HistoryList({ bookings, onApprove, onReject, onUnpay, on
               onReject={onReject}
               onUnpay={onUnpay}
               onDelete={onDelete}
+              isParent={isParent}
               onToggleExpand={(rowIndex) =>
                 setExpandedItem(expandedItem === rowIndex ? null : rowIndex)
               }
