@@ -2,10 +2,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import generateBuildId from './vite-build-id-plugin.js'
 
 export default defineConfig({
   base: '/viikkoraha/',
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), generateBuildId()],
   server: {
     host: true,
     port: 5173,
