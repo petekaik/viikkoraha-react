@@ -20,8 +20,6 @@ vi.mock('../i18n/useTranslation', () => ({
       const fi = {
         'ui.unknownUser': 'Käyttäjä',
         'ui.settings.logout': '🔓 Kirjaudu ulos',
-        'ui.settings.promoteToParent': '👑 Aseta vanhemman rooli',
-        'ui.settings.promoting': 'Asetetaan...',
         'ui.settings.save': 'Tallenna',
         'ui.settings.saving': 'Tallennetaan...',
         'ui.settings.advancedSettings': 'Edistyneet asetukset',

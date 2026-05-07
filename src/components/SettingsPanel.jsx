@@ -4,7 +4,6 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useAuthStore } from '../stores/authStore';
 import { useGoogleAuth } from '../hooks/useGoogleAuth';
 import { useGoogleSheets } from '../hooks/useGoogleSheets';
-import { useUsers } from '../hooks/useUsers';
 import { saveSettingsToSheet, ensureSettingsSheet } from '../utils/settingsSync';
 import { validateClientId, validateApiKey } from '../utils/validation';
 import { ROLES, USERS_RANGE } from '../utils/sheets-schema';
@@ -25,7 +24,6 @@ export default function SettingsPanel() {
   const signOut = useAuthStore((s) => s.signOut);
   const { logout } = useGoogleAuth();
   const { initSheets } = useGoogleSheets();
-  const { getUsers, saveUsers } = useUsers();
   const { closeSettings } = useApp();
 
   const [form, setForm] = useState({ clientId: '', apiKey: '' });
@@ -35,7 +33,6 @@ export default function SettingsPanel() {
   const [saving, setSaving] = useState(false);
   const [spreadsheetName, setSpreadsheetName] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [promoting, setPromoting] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -124,29 +121,6 @@ export default function SettingsPanel() {
     setNotification({ type: 'success', message: t('ui.loggedOut') });
   }
 
-  async function handlePromoteToParent() {
-    setPromoting(true);
-    try {
-      const email = user?.email;
-      const name = user?.name;
-      if (!email) { setNotification({ type: 'error', message: t('ui.settings.emailMissing') }); return; }
-      const users = await getUsers();
-      const existingIdx = users.findIndex((u) => u.email === email);
-      if (existingIdx >= 0) {
-        users[existingIdx].role = ROLES.PARENT;
-      } else {
-        users.push({ email, name: name || email, role: ROLES.PARENT });
-      }
-      await saveUsers(users);
-      setRole(ROLES.PARENT);
-      setNotification({ type: 'success', message: t('ui.promotedToParent') });
-    } catch (e) {
-      setNotification({ type: 'error', message: t('ui.settings.roleFailed') + ': ' + (e.message || '') });
-    } finally {
-      setPromoting(false);
-    }
-  }
-
   const isParent = role === ROLES.PARENT;
 
   return (
@@ -205,17 +179,6 @@ export default function SettingsPanel() {
             {t('ui.settings.manageUsers')}
           </button>
         </div>
-      )}
-
-      {/* Vanhemman roolin asetus — vain lapsiroolissa */}
-      {isSignedIn && !isParent && (
-        <button
-          onClick={handlePromoteToParent}
-          disabled={promoting}
-          className="w-full bg-amber-700 hover:bg-amber-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
-        >
-          {promoting ? t('ui.settings.promoting') : t('ui.settings.promoteToParent')}
-        </button>
       )}
 
       {/* Kirjaudu ulos */}
